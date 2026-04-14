@@ -1,0 +1,216 @@
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{multicol}
+\setlength{\multicolsep}{-3.0pt}
+\setlength{\columnsep}{-1pt}
+\input{glyphtounicode}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\usepackage[margin=0.4in]{geometry}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large\bfseries
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\classesList}[4]{
+    \item\small{
+        {#1 #2 #3 #4 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{1.0\textwidth}[t]{l@{\extracolsep{\fill}}r}
+    \vspace{-2pt}
+      \textbf{#1} & \textbf{\small #2} \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{1.001\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & \textbf{\small #2}\\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemi{$\vcenter{\hbox{\tiny$\bullet$}}$}
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.0in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%----------HEADING----------
+% !! DO NOT CHANGE THIS SECTION !!
+\begin{center}
+    {\Huge \textbf{Manas Dalvi}} \\ \vspace{1pt}
+    Los Angeles, United States \\ \vspace{1pt}
+    \small Phone: (213) 803-6398 $\mid$ \href{mailto:manasman@usc.edu}{\underline{manasman@usc.edu}} $\mid$
+    \href{https://linkedin.com/in/manasdalvi}{LinkedIn: \underline{manasdalvi}} $\mid$
+    \href{https://github.com/manas-33}{GitHub: \underline{manas-33}} $\mid$
+    \href{https://manasdalvi.vercel.app/}{\underline{manasdalvi.vercel.app}}
+    \vspace{-8pt}
+\end{center}
+
+\vspace{-10pt}
+
+%-----------EDUCATION-----------
+% !! DO NOT CHANGE THIS SECTION !!
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {University of Southern California}{Aug 2025 -- Expected May 2027}
+      {Master of Science in Computer Science}{Los Angeles, United States}
+    \resumeSubheading
+      {Vishwakarma Institute of Technology}{Aug 2021 -- May 2025}
+      {Bachelor of Technology in Computer Engineering}{Pune, India}
+  \resumeSubHeadingListEnd
+
+\vspace{-13pt}
+
+%-----------EXPERIENCE-----------
+% !! FILL IN: pick 3 most relevant roles from cv.md !!
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    % ROLE 1
+    \resumeSubheading
+      {COMPANY NAME}{START DATE -- END DATE}
+      {ROLE TITLE}{LOCATION}
+      \resumeItemListStart
+        \resumeItem{BULLET 1}
+        \resumeItem{BULLET 2}
+        \resumeItem{BULLET 3}
+      \resumeItemListEnd
+      \vspace{-2pt}
+
+    % ROLE 2
+    \resumeSubheading
+      {COMPANY NAME}{START DATE -- END DATE}
+      {ROLE TITLE}{LOCATION}
+      \resumeItemListStart
+        \resumeItem{BULLET 1}
+        \resumeItem{BULLET 2}
+        \resumeItem{BULLET 3}
+      \resumeItemListEnd
+      \vspace{-2pt}
+
+    % ROLE 3
+    \resumeSubheading
+      {COMPANY NAME}{START DATE -- END DATE}
+      {ROLE TITLE}{LOCATION}
+      \resumeItemListStart
+        \resumeItem{BULLET 1}
+        \resumeItem{BULLET 2}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+\vspace{-16pt}
+
+%-----------PROJECTS-----------
+% !! FILL IN: pick 3 most relevant projects from cv.md !!
+\section{Projects}
+  \vspace{-5pt}
+  \resumeSubHeadingListStart
+
+    % PROJECT 1
+    \resumeProjectHeading
+      {\textbf{PROJECT NAME(Only the name of the project)} $|$ \emph{TECH STACK}}{}
+      \resumeItemListStart
+        \resumeItem{BULLET 1}
+        \resumeItem{BULLET 2}
+        \resumeItem{BULLET 3}
+      \resumeItemListEnd
+      \vspace{-16pt}
+
+    % PROJECT 2
+    \resumeProjectHeading
+      {\textbf{PROJECT NAME(Only the name of the project)} $|$ \emph{TECH STACK}}{}
+      \resumeItemListStart
+        \resumeItem{BULLET 1}
+        \resumeItem{BULLET 2}
+        \resumeItem{BULLET 3}
+      \resumeItemListEnd
+      \vspace{-16pt}
+
+    % PROJECT 3
+    \resumeProjectHeading
+      {\textbf{PROJECT NAME(Only the name of the project)} $|$ \emph{TECH STACK}}{}
+      \resumeItemListStart
+        \resumeItem{BULLET 1}
+        \resumeItem{BULLET 2}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+\vspace{-14pt}
+
+%-----------TECHNICAL SKILLS-----------
+% !! FILL IN: reorder/filter skills based on job relevance !!
+\section{Technical Skills}
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \small{\item{
+    \vspace{-2pt}
+    \textbf{Language}{: LANGUAGES} \\
+    \textbf{Tech}{: FRAMEWORKS AND LIBRARIES} \\
+    \textbf{Cloud}{: CLOUD } \\
+    \textbf{Courses}{: Data Structures \& Algorithms, Operating Systems, Computer Networks, Database, Distributed Systems, AI/ML} \\
+  }}
+\end{itemize}
+
+\end{document}
