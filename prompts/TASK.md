@@ -15,7 +15,7 @@ by selecting the best-fit content from `cv.md` and filling in `templates/templat
    b. Note the **Output Path** listed in the file (e.g. `output/Google_SoftwareEngineer/resume.tex`).
    c. If that output file already exists, **skip it**.
    d. Build the tailored resume (rules below).
-   e. Write the complete tailored LaTeX to the output path.
+   e. Write the complete tailored LaTeX to the output path using your **file write/edit tool** (the `output/<slug>/` folder already exists from the prepare step). **Do not use the terminal at all** — no `ls`, `mkdir`, `cat`, or other shell commands. They can hang or fail this environment; the job file already gives you the exact output path.
 4. After finishing all jobs, tell the user to run `python scripts/compile_pdfs.py`.
 
 ---
@@ -67,6 +67,7 @@ Reorder within each category so the most relevant skills appear first.
 ## Output rules
 
 - Fill in `templates/template.tex` — replace every placeholder with real content
+- **Never rely on shell/terminal** (`ls`, `mkdir`, `cat`, etc.) to inspect or create paths; write `resume.tex` directly at the path from the job file
 - **Do not touch** the heading or education sections (marked `!! DO NOT CHANGE !!`)
 - **Do not add any new sections** beyond: Education, Experience, Projects, Technical Skills
 - Output must be a **complete, standalone, compilable LaTeX file**

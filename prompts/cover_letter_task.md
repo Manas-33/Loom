@@ -10,7 +10,7 @@ Your job is to write a tailored cover letter for each job listing in `/jobs/` us
       * If there is a `## Company Intro` section (or “about the company” prose elsewhere), treat it as the best source for accurate company-specific context. Use it in paragraph 1 where you need something specific about the company. Do not invent facts that are not supported by the job file or `cv.md`.
    b. The output path is `output/<slug>/cover_letter.json` (same folder as the tailored resume).
    c. If that JSON file already exists, skip it.
-   d. Write the tailored content as valid JSON only.
+   d. Write the tailored content as valid JSON only using your **file write/edit tool** (the `output/<slug>/` folder already exists). **Do not use the terminal** (`ls`, `mkdir`, etc.) — write straight to `output/<slug>/cover_letter.json` using the path from the job listing.
 4. After finishing all jobs, tell the user to run `python scripts/build_cover_letters.py`.
 
 ## Tone & Style
