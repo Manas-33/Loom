@@ -3,6 +3,8 @@
 Step 1 — Run this first.
 Reads jobs.xlsx and writes each job as a structured markdown file into /jobs/
 These files are what OpenCode reads when it does the tailoring.
+Optional spreadsheet column `Company_Intro` becomes a `## Company Intro` section
+(after `## Job Description`) for company-specific context in cover letters and résumés.
 
 Usage:
   python prepare_jobs.py
@@ -29,6 +31,8 @@ COL_DESC     = "About_the_job"
 COL_CATEGORY = "Category"
 COL_SALARY   = "Salary"
 COL_STATUS   = "Status"
+# Optional: short “about the company” blurb for cover letters (omit column if unused)
+COL_COMPANY_INTRO = "Company_Intro"
 # ────────────────────────────────────────────────────────────
 
 
@@ -81,6 +85,12 @@ def main():
         salary   = str(row.get(COL_SALARY,   "")).strip()
         category = str(row.get(COL_CATEGORY, "")).strip()
 
+        company_intro = ""
+        if COL_COMPANY_INTRO in row.index:
+            raw_ci = row.get(COL_COMPANY_INTRO)
+            if pd.notna(raw_ci) and str(raw_ci).strip():
+                company_intro = str(raw_ci).strip()
+
         slug     = make_slug(company, title, location)
         job_file = os.path.join(JOBS_DIR, f"{slug}.md")
         out_dir  = os.path.join(OUTPUT_DIR, slug)
@@ -104,7 +114,14 @@ def main():
 `{out_dir}/resume.tex`
 
 ## Job Description
+
 {desc}
+"""
+        if company_intro:
+            content += f"""
+## Company Intro
+
+{company_intro}
 """
         with open(job_file, "w", encoding="utf-8") as f:
             f.write(content)
