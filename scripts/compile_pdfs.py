@@ -3,18 +3,19 @@
 Step 3 — Run this after OpenCode has finished tailoring.
 Finds every resume.tex in /output/ and compiles it to a PDF.
 
-Usage:
-  python compile_pdfs.py
-  python compile_pdfs.py --skip-existing   # Only compile new ones
+Usage (from repo root):
+  python scripts/compile_pdfs.py
+  python scripts/compile_pdfs.py --skip-existing   # Only compile new ones
 """
 
 import os
 import subprocess
 import shutil
 import argparse
+from pathlib import Path
 
-
-OUTPUT_DIR = "output"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = REPO_ROOT / "output"
 
 
 def check_pdflatex():
@@ -56,13 +57,13 @@ def main():
 
     # Find all resume.tex files
     tex_files = []
-    for root, _, files in os.walk(OUTPUT_DIR):
+    for root, _, files in os.walk(str(OUTPUT_DIR)):
         for f in files:
             if f == "resume.tex":
                 tex_files.append(os.path.join(root, f))
 
     if not tex_files:
-        print(f"No resume.tex files found in /{OUTPUT_DIR}/")
+        print(f"No resume.tex files found in {OUTPUT_DIR.relative_to(REPO_ROOT)}/")
         print("Run opencode first to generate tailored resumes.")
         return
 
@@ -74,7 +75,7 @@ def main():
 
     for i, tex_path in enumerate(tex_files, 1):
         pdf_path = tex_path.replace(".tex", ".pdf")
-        label    = os.path.dirname(tex_path).replace(OUTPUT_DIR + os.sep, "")
+        label    = os.path.dirname(tex_path).replace(str(OUTPUT_DIR) + os.sep, "")
 
         if args.skip_existing and os.path.exists(pdf_path):
             print(f"[{i:>3}/{len(tex_files)}] ⏭  {label}")

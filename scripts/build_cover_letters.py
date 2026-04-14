@@ -2,10 +2,10 @@
 """
 Build cover_letter.docx from cover_letter.json under /output/.
 
-Usage:
+Usage (from repo root):
   pip install python-docx
-  python build_cover_letters.py
-  python build_cover_letters.py --skip-existing
+  python scripts/build_cover_letters.py
+  python scripts/build_cover_letters.py --skip-existing
 """
 
 from __future__ import annotations
@@ -14,8 +14,10 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
-OUTPUT_DIR = "output"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = REPO_ROOT / "output"
 
 # Fixed letterhead (edit to match your résumé / preferences)
 FULL_NAME = "Manas Dalvi"
@@ -144,14 +146,14 @@ def main():
     _require_docx()
 
     json_files = []
-    for root, _, files in os.walk(OUTPUT_DIR):
+    for root, _, files in os.walk(str(OUTPUT_DIR)):
         for f in files:
             if f == "cover_letter.json":
                 json_files.append(os.path.join(root, f))
 
     if not json_files:
-        print(f"No cover_letter.json files found in /{OUTPUT_DIR}/")
-        print("Run opencode with cover_letter_task.md first.")
+        print(f"No cover_letter.json files found in {OUTPUT_DIR.relative_to(REPO_ROOT)}/")
+        print("Run opencode with prompts/cover_letter_task.md first.")
         return
 
     print(f"Found {len(json_files)} cover_letter.json files\n")
@@ -160,7 +162,7 @@ def main():
 
     for i, json_path in enumerate(sorted(json_files), 1):
         docx_path = os.path.join(os.path.dirname(json_path), "cover_letter.docx")
-        label = os.path.dirname(json_path).replace(OUTPUT_DIR + os.sep, "")
+        label = os.path.dirname(json_path).replace(str(OUTPUT_DIR) + os.sep, "")
 
         if args.skip_existing and os.path.exists(docx_path):
             print(f"[{i:>3}/{len(json_files)}] ⏭  {label}")

@@ -1,27 +1,31 @@
 #!/usr/bin/env python3
 """
 Step 1 — Run this first.
-Reads jobs.xlsx and writes each job as a structured markdown file into /jobs/
+Reads jobs.xlsx and writes each job as a structured markdown file into jobs/.
 These files are what OpenCode reads when it does the tailoring.
 Optional spreadsheet column `Company_Intro` becomes a `## Company Intro` section
 (after `## Job Description`) for company-specific context in cover letters and résumés.
 
-Usage:
-  python prepare_jobs.py
-  python prepare_jobs.py --limit 10          # Only first 10 jobs
-  python prepare_jobs.py --filter-company Google
-  python prepare_jobs.py --skip-existing     # Skip jobs already prepared
+Usage (from repo root):
+  python scripts/prepare_jobs.py
+  python scripts/prepare_jobs.py --limit 10          # Only first 10 jobs
+  python scripts/prepare_jobs.py --filter-company Google
+  python scripts/prepare_jobs.py --skip-existing     # Skip jobs already prepared
 """
 
 import os
 import re
 import argparse
+from pathlib import Path
+
 import pandas as pd
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 # ── Settings ────────────────────────────────────────────────
-JOBS_FILE    = "jobs.xlsx"
-JOBS_DIR     = "jobs"       # Where prompt files go
-OUTPUT_DIR   = "output"     # Where OpenCode writes tailored resumes
+JOBS_FILE    = REPO_ROOT / "jobs.xlsx"
+JOBS_DIR     = REPO_ROOT / "jobs"       # Where prompt files go
+OUTPUT_DIR   = REPO_ROOT / "output"     # Where OpenCode writes tailored resumes
 
 # Column names — adjust if your sheet headers differ
 COL_COMPANY  = "Company"
@@ -54,8 +58,8 @@ def main():
     args = parser.parse_args()
 
     # Load spreadsheet
-    df = pd.read_excel(JOBS_FILE)
-    print(f"Loaded {len(df)} rows from {JOBS_FILE}")
+    df = pd.read_excel(str(JOBS_FILE))
+    print(f"Loaded {len(df)} rows from {JOBS_FILE.relative_to(REPO_ROOT)}")
 
     # Drop rows with no job description
     df = df[df[COL_DESC].notna() & (df[COL_DESC].str.strip() != "")]
@@ -71,8 +75,8 @@ def main():
 
     print(f"Preparing {len(df)} jobs...\n")
 
-    os.makedirs(JOBS_DIR, exist_ok=True)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    JOBS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     written = 0
     skipped = 0
@@ -92,11 +96,12 @@ def main():
                 company_intro = str(raw_ci).strip()
 
         slug     = make_slug(company, title, location)
-        job_file = os.path.join(JOBS_DIR, f"{slug}.md")
-        out_dir  = os.path.join(OUTPUT_DIR, slug)
+        job_file = JOBS_DIR / f"{slug}.md"
+        out_dir  = OUTPUT_DIR / slug
+        out_tex_rel = (Path("output") / slug / "resume.tex").as_posix()
 
         # Skip if already has a tailored resume
-        if args.skip_existing and os.path.exists(os.path.join(out_dir, "resume.tex")):
+        if args.skip_existing and (out_dir / "resume.tex").exists():
             skipped += 1
             continue
 
@@ -111,7 +116,7 @@ def main():
 - **Salary:** {salary}
 
 ## Output Path
-`{out_dir}/resume.tex`
+`{out_tex_rel}`
 
 ## Job Description
 
@@ -126,13 +131,13 @@ def main():
         with open(job_file, "w", encoding="utf-8") as f:
             f.write(content)
 
-        os.makedirs(out_dir, exist_ok=True)
+        out_dir.mkdir(parents=True, exist_ok=True)
         written += 1
 
-    print(f"✅ {written} job files written to /{JOBS_DIR}/")
+    print(f"✅ {written} job files written to {JOBS_DIR.relative_to(REPO_ROOT)}/")
     if skipped:
         print(f"⏭  {skipped} skipped (resume.tex already exists)")
-    print(f"\nNext step: open OpenCode and it will follow TASK.md to tailor all jobs.")
+    print(f"\nNext step: open OpenCode and it will follow prompts/TASK.md to tailor all jobs.")
 
 
 if __name__ == "__main__":

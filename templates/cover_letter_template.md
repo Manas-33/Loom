@@ -1,10 +1,10 @@
 # Cover letter template (DOCX pipeline)
 
-The agent writes **`output/<slug>/cover_letter.json`**. The build step runs `python build_cover_letters.py`, which creates **`cover_letter.docx`** in the same folder.
+The agent writes **`output/<slug>/cover_letter.json`**. The build step runs `python scripts/build_cover_letters.py`, which creates **`cover_letter.docx`** in the same folder.
 
 ## Letterhead
 
-Name, address, phone, and links are fixed in `build_cover_letters.py` (constants at the top). Edit that file to change them.
+Name, address, phone, and links are fixed in `scripts/build_cover_letters.py` (constants at the top). Edit that file to change them.
 
 ## JSON schema
 

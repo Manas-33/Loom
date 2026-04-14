@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")"
 
 # Full resume tailoring pipeline — runs everything in one script.
 #
@@ -10,7 +11,7 @@
 
 # ── Step 1: Prepare job files ──────────────────────────────
 echo "📂 Step 1: Preparing job files..."
-python prepare_jobs.py --skip-existing "$@"
+python scripts/prepare_jobs.py --skip-existing "$@"
 
 echo ""
 
@@ -29,7 +30,7 @@ for job_file in jobs/*.md; do
     fi
 
     echo "🔄 Processing: $slug"
-    opencode run "Read TASK.md, cv.md, and template.tex. Then process only this one job file: $job_file. Write the tailored resume to the output path listed inside it."
+    opencode run "Read prompts/TASK.md, cv.md, and templates/template.tex. Then process only this one job file: $job_file. Write the tailored resume to the output path listed inside it."
 done
 
 echo ""
@@ -37,7 +38,7 @@ echo ""
 # ── Step 3: Compile PDFs ───────────────────────────────────
 echo "📄 Step 3: Compiling PDFs..."
 echo ""
-python compile_pdfs.py --skip-existing
+python scripts/compile_pdfs.py --skip-existing
 
 echo ""
 echo "🎉 Done!"

@@ -2,21 +2,21 @@
 
 You are an expert resume writer and ATS optimization specialist.
 Your job is to build a tailored resume for each job listing in `/jobs/`
-by selecting the best-fit content from `cv.md` and filling in `template.tex`.
+by selecting the best-fit content from `cv.md` and filling in `templates/template.tex`.
 
 ---
 
 ## What to do
 
 1. Read `cv.md` **once** — this is the full pool of all work experience and projects.
-2. Read `template.tex` **once** — this is the LaTeX structure to fill in. The heading and education sections are locked; only fill the placeholders in Experience, Projects, and Technical Skills.
+2. Read `templates/template.tex` **once** — this is the LaTeX structure to fill in. The heading and education sections are locked; only fill the placeholders in Experience, Projects, and Technical Skills.
 3. For **each `.md` file** in the `/jobs/` folder:
    a. Read the job file — it contains the company, title, location, and full job description.
    b. Note the **Output Path** listed in the file (e.g. `output/Google_SoftwareEngineer/resume.tex`).
    c. If that output file already exists, **skip it**.
    d. Build the tailored resume (rules below).
    e. Write the complete tailored LaTeX to the output path.
-4. After finishing all jobs, tell the user to run `python compile_pdfs.py`.
+4. After finishing all jobs, tell the user to run `python scripts/compile_pdfs.py`.
 
 ---
 
@@ -66,7 +66,7 @@ Reorder within each category so the most relevant skills appear first.
 
 ## Output rules
 
-- Fill in `template.tex` — replace every placeholder with real content
+- Fill in `templates/template.tex` — replace every placeholder with real content
 - **Do not touch** the heading or education sections (marked `!! DO NOT CHANGE !!`)
 - **Do not add any new sections** beyond: Education, Experience, Projects, Technical Skills
 - Output must be a **complete, standalone, compilable LaTeX file**
@@ -79,6 +79,6 @@ Reorder within each category so the most relevant skills appear first.
 | File | Purpose |
 |------|---------|
 | `cv.md` | Full content pool — all work experience and projects with original bullets |
-| `template.tex` | LaTeX structure to populate |
+| `templates/template.tex` | LaTeX structure to populate |
 | `jobs/*.md` | One file per job listing |
 | `output/[slug]/resume.tex` | Write the tailored resume here |

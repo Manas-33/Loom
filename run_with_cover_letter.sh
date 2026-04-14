@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")"
 
 # Full pipeline — resumes + cover letters in one script.
 #
@@ -10,7 +11,7 @@
 
 # ── Step 1: Prepare job files ──────────────────────────────
 echo "📂 Step 1: Preparing job files..."
-python prepare_jobs.py --skip-existing "$@"
+python scripts/prepare_jobs.py --skip-existing "$@"
 echo ""
 
 # ── Step 2: Tailor resumes via OpenCode ────────────────────
@@ -27,7 +28,7 @@ for job_file in jobs/*.md; do
     fi
 
     echo "🔄 Resume: $slug"
-    opencode run "Read TASK.md, cv.md, and template.tex. Then process only this one job file: $job_file. Write the tailored resume to the output path listed inside it."
+    opencode run "Read prompts/TASK.md, cv.md, and templates/template.tex. Then process only this one job file: $job_file. Write the tailored resume to the output path listed inside it."
 done
 
 echo ""
@@ -46,18 +47,18 @@ for job_file in jobs/*.md; do
     fi
 
     echo "🔄 Cover letter: $slug"
-    opencode run "Read cover_letter_task.md, cv.md, and cover_letter_template.md. Then process only this one job file: $job_file. Write the cover letter data to output/$slug/cover_letter.json (valid JSON only, schema in cover_letter_template.md)."
+    opencode run "Read prompts/cover_letter_task.md, cv.md, and templates/cover_letter_template.md. Then process only this one job file: $job_file. Write the cover letter data to output/$slug/cover_letter.json (valid JSON only, schema in templates/cover_letter_template.md)."
 done
 
 echo ""
 
 # ── Step 4: Compile all PDFs ───────────────────────────────
 echo "📄 Step 4: Compiling resume PDFs..."
-python compile_pdfs.py --skip-existing
+python scripts/compile_pdfs.py --skip-existing
 
 echo ""
 echo "📄 Step 5: Building cover letter DOCX files..."
-python build_cover_letters.py --skip-existing
+python scripts/build_cover_letters.py --skip-existing
 
 echo ""
 echo "🎉 Done! Check the /output/ folder."
