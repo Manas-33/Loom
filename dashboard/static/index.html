@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loom Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Local applyBot dashboard</p>
+          <h1>Loom</h1>
+          <p class="hero-copy">
+            Track every job artifact, run the pipeline without remembering shell commands,
+            and watch OpenCode logs stream in live.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <button id="refresh-button" class="button button-secondary">Refresh jobs</button>
+          <button id="pipeline-button" class="button">Run full pipeline</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel controls-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Prepare jobs</h2>
+              <p>Mirror `scripts/prepare_jobs.py` with the same flags.</p>
+            </div>
+            <p class="panel-kicker">Run prep once, then launch only the missing generation steps.</p>
+          </div>
+          <form id="prepare-form" class="form-grid">
+            <label>
+              <span>Limit</span>
+              <input type="number" min="1" name="limit" placeholder="10" />
+            </label>
+            <label>
+              <span>Company filter</span>
+              <input type="text" name="filter_company" placeholder="Google" />
+            </label>
+            <label>
+              <span>Category filter</span>
+              <input type="text" name="filter_category" placeholder="ML" />
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" name="skip_existing" checked />
+              <span>Skip existing resumes</span>
+            </label>
+            <div class="prepare-submit">
+              <button type="submit" class="button">Prepare markdown</button>
+            </div>
+          </form>
+          <div class="bulk-actions">
+            <button id="resume-missing-button" class="button button-secondary">Run missing resumes</button>
+            <button id="cover-missing-button" class="button button-secondary">Run missing covers</button>
+            <button id="compile-button" class="button button-secondary">Compile PDFs</button>
+            <button id="docx-button" class="button button-secondary">Build DOCX</button>
+          </div>
+        </section>
+
+        <section class="panel log-panel">
+          <div class="panel-heading log-header">
+            <div>
+              <h2>Live logs</h2>
+              <p id="run-status">Idle</p>
+            </div>
+            <button id="cancel-button" class="button button-danger" disabled>Cancel run</button>
+          </div>
+          <pre id="log-output" class="log-output">Waiting for a run…</pre>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-heading table-header">
+            <div>
+              <h2>Jobs</h2>
+              <p id="job-count">Loading…</p>
+            </div>
+            <label class="table-filter">
+              <span>Filter</span>
+              <input id="job-filter" type="search" placeholder="Search company, title, slug" />
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Job</th>
+                  <th>Artifacts</th>
+                  <th>Downloads</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="jobs-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel diagnostics-panel">
+          <div class="panel-heading">
+            <h2>Diagnostics</h2>
+            <p>Quick local sanity checks for the dashboard runtime.</p>
+          </div>
+          <div id="diagnostics-grid" class="diagnostics-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

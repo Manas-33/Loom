@@ -80,3 +80,31 @@ python scripts/build_cover_letters.py --skip-existing
 ## Privacy
 
 `.gitignore` excludes `cv.md`, `jobs.xlsx`, `jobs/`, and `output/` so résumé text, job exports, generated TeX/PDFs, cover-letter JSON, and DOCX files stay local.
+
+## Local dashboard
+
+You can also run a **localhost-only** dashboard that wraps the same scripts and `opencode` commands with a browser UI, live logs, diagnostics, and download links.
+
+Install the extra web dependencies:
+
+```bash
+pip install -r dashboard_requirements.txt
+```
+
+Then start the app from the repo root:
+
+```bash
+uvicorn dashboard.app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+
+What the dashboard can do:
+
+- Scan `jobs/` and `output/` to show artifact status per job
+- Run `scripts/prepare_jobs.py` with `--limit`, `--filter-company`, `--filter-category`, and `--skip-existing`
+- Run the same `opencode run "..."` prompts as `run_all.sh` and `run_with_cover_letter.sh`
+- Compile PDFs and build cover-letter DOCX files
+- Stream stdout/stderr into the browser with cancel support for the active subprocess
+
+The server is intended to stay on your machine only, so keep it bound to `127.0.0.1`.
