@@ -3,6 +3,12 @@
   --bg-accent: #e7ded0;
   --panel: rgba(255, 251, 245, 0.88);
   --panel-strong: rgba(255, 250, 243, 0.96);
+  --panel-soft: rgba(231, 216, 194, 0.45);
+  --surface: rgba(255, 255, 255, 0.74);
+  --surface-strong: rgba(255, 251, 245, 0.92);
+  --surface-muted: rgba(255, 251, 245, 0.8);
+  --surface-subtle: rgba(67, 54, 42, 0.08);
+  --table-head: rgba(255, 251, 245, 0.94);
   --text: #1f1b18;
   --muted: #6c6258;
   --line: rgba(67, 54, 42, 0.14);
@@ -18,6 +24,27 @@
   --font-body: "Avenir Next", "Segoe UI", sans-serif;
 }
 
+[data-theme="dark"] {
+  --bg: #171412;
+  --bg-accent: #221d1a;
+  --panel: rgba(34, 28, 24, 0.88);
+  --panel-strong: rgba(40, 33, 28, 0.96);
+  --panel-soft: rgba(255, 255, 255, 0.04);
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-strong: rgba(255, 255, 255, 0.08);
+  --surface-muted: rgba(255, 255, 255, 0.05);
+  --surface-subtle: rgba(255, 255, 255, 0.06);
+  --table-head: rgba(29, 24, 21, 0.96);
+  --text: #f2eadf;
+  --muted: #b9aa9b;
+  --line: rgba(242, 234, 223, 0.1);
+  --accent: #de825c;
+  --accent-dark: #f2b08d;
+  --success: #6db68a;
+  --danger: #d16666;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -31,6 +58,14 @@ body {
     linear-gradient(180deg, #f8f4ec 0%, var(--bg) 48%, #efe6d8 100%);
   color: var(--text);
   font-family: var(--font-body);
+  transition: background 180ms ease, color 180ms ease;
+}
+
+[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at top left, rgba(222, 130, 92, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(109, 182, 138, 0.12), transparent 24%),
+    linear-gradient(180deg, #120f0d 0%, var(--bg) 48%, #1c1714 100%);
 }
 
 button,
@@ -55,6 +90,11 @@ input {
   border-radius: var(--radius-lg);
   background: linear-gradient(135deg, rgba(255, 252, 247, 0.92), rgba(245, 234, 220, 0.86));
   box-shadow: var(--shadow);
+}
+
+[data-theme="dark"] .hero {
+  border-color: rgba(242, 176, 141, 0.14);
+  background: linear-gradient(135deg, rgba(39, 31, 26, 0.94), rgba(26, 21, 18, 0.9));
 }
 
 .eyebrow {
@@ -155,9 +195,9 @@ input {
   max-width: 28ch;
   margin: 0;
   padding: 12px 14px;
-  border: 1px solid rgba(67, 54, 42, 0.1);
+  border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(231, 216, 194, 0.45);
+  background: var(--panel-soft);
   font-size: 0.94rem;
   line-height: 1.45;
 }
@@ -168,9 +208,13 @@ input {
   gap: 16px;
   align-items: end;
   padding: 20px;
-  border: 1px solid rgba(67, 54, 42, 0.08);
+  border: 1px solid var(--line);
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(245, 237, 225, 0.6));
+}
+
+[data-theme="dark"] .form-grid {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.02));
 }
 
 .form-grid label {
@@ -185,9 +229,16 @@ input {
 .form-grid input[type="text"],
 .table-filter input {
   padding: 12px 14px;
-  border: 1px solid rgba(67, 54, 42, 0.18);
+  border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.74);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.form-grid input[type="number"]::placeholder,
+.form-grid input[type="text"]::placeholder,
+.table-filter input::placeholder {
+  color: var(--muted);
 }
 
 .checkbox-row {
@@ -197,8 +248,8 @@ input {
   gap: 10px !important;
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(255, 251, 245, 0.8);
-  border: 1px solid rgba(67, 54, 42, 0.08);
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
 }
 
 .checkbox-row input {
@@ -248,8 +299,71 @@ input {
   color: var(--text);
 }
 
+[data-theme="dark"] .button-secondary {
+  background: #3a3029;
+  color: var(--text);
+}
+
 .button-danger {
   background: var(--danger);
+}
+
+.theme-toggle {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel-strong);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--panel-strong) 82%, var(--accent) 18%);
+}
+
+.theme-toggle-icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.theme-toggle-sun {
+  opacity: 0;
+  transform: scale(0.75) rotate(-20deg);
+}
+
+.theme-toggle-moon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+[data-theme="dark"] .theme-toggle-sun {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+[data-theme="dark"] .theme-toggle-moon {
+  opacity: 0;
+  transform: scale(0.75) rotate(20deg);
+}
+
+[data-theme="dark"] .theme-toggle {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(242, 234, 223, 0.12);
 }
 
 .button:disabled {
@@ -297,7 +411,7 @@ thead th {
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  background: rgba(255, 251, 245, 0.94);
+  background: var(--table-head);
   position: sticky;
   top: 0;
 }
@@ -416,7 +530,7 @@ tbody td.action-cell {
 }
 
 .job-row.job-row-ignore td {
-  background: rgba(155, 47, 47, 0.08);
+  background: rgba(181, 130, 33, 0.08);
 }
 
 .download-stack {
@@ -437,7 +551,7 @@ tbody td.action-cell {
   padding: 8px 12px;
   border: 1px solid transparent;
   border-radius: 999px;
-  background: rgba(67, 54, 42, 0.08);
+  background: var(--surface-subtle);
   color: var(--muted);
   font-size: 0.88rem;
   font-weight: 700;
@@ -453,9 +567,9 @@ tbody td.action-cell {
 .status-select {
   min-width: 132px;
   padding: 8px 12px;
-  border: 1px solid rgba(67, 54, 42, 0.14);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 251, 245, 0.92);
+  background: var(--surface-strong);
   color: var(--text);
   font: inherit;
   font-size: 0.85rem;
@@ -506,7 +620,7 @@ tbody td.action-cell {
 }
 
 .job-main code {
-  background: rgba(67, 54, 42, 0.08);
+  background: var(--surface-subtle);
   padding: 2px 8px;
   border-radius: 999px;
   width: fit-content;

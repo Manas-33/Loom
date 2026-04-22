@@ -4,6 +4,7 @@ const state = {
   currentPageJobs: [],
   currentPage: 1,
   pageSize: 10,
+  theme: "light",
   currentRunId: null,
   currentSource: null,
 };
@@ -19,6 +20,7 @@ const elements = {
   prepareForm: document.getElementById("prepare-form"),
   refreshButton: document.getElementById("refresh-button"),
   pipelineButton: document.getElementById("pipeline-button"),
+  themeToggle: document.getElementById("theme-toggle"),
   resumeMissingButton: document.getElementById("resume-missing-button"),
   coverMissingButton: document.getElementById("cover-missing-button"),
   compileButton: document.getElementById("compile-button"),
@@ -76,6 +78,31 @@ function statusRowClass(status) {
 
 function clampPage(page, totalPages) {
   return Math.min(Math.max(page, 1), Math.max(totalPages, 1));
+}
+
+function applyTheme(theme) {
+  state.theme = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = state.theme;
+  elements.themeToggle.setAttribute(
+    "aria-label",
+    state.theme === "dark" ? "Switch to light mode" : "Switch to dark mode",
+  );
+  elements.themeToggle.setAttribute(
+    "title",
+    state.theme === "dark" ? "Switch to light mode" : "Switch to dark mode",
+  );
+  window.localStorage.setItem("loom-theme", state.theme);
+}
+
+function initializeTheme() {
+  const savedTheme = window.localStorage.getItem("loom-theme");
+  if (savedTheme) {
+    applyTheme(savedTheme);
+    return;
+  }
+
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(prefersDark ? "dark" : "light");
 }
 
 function renderJobs() {
@@ -270,6 +297,9 @@ elements.paginationNext.addEventListener("click", () => {
   state.currentPage += 1;
   renderJobs();
 });
+elements.themeToggle.addEventListener("click", () => {
+  applyTheme(state.theme === "dark" ? "light" : "dark");
+});
 elements.refreshButton.addEventListener("click", async () => {
   await Promise.all([loadJobs(), loadDiagnostics()]);
 });
@@ -353,3 +383,5 @@ elements.tableBody.addEventListener("change", async (event) => {
 Promise.all([loadJobs(), loadDiagnostics()]).catch((error) => {
   elements.runStatus.textContent = `Startup error: ${error.message}`;
 });
+
+initializeTheme();
