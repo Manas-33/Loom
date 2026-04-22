@@ -280,6 +280,7 @@ input {
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 th,
@@ -300,6 +301,40 @@ thead th {
   top: 0;
 }
 
+thead th:first-child {
+  text-align: left;
+}
+
+thead th:nth-child(2),
+thead th:nth-child(3),
+thead th:nth-child(4),
+thead th:nth-child(5) {
+  text-align: center;
+}
+
+thead th:first-child,
+tbody td.job-cell {
+  width: 42%;
+}
+
+thead th:nth-child(2) {
+  width: 16%;
+}
+
+thead th:nth-child(3) {
+  width: 14%;
+}
+
+thead th:nth-child(4),
+tbody td.status-cell {
+  width: 14%;
+}
+
+thead th:nth-child(5),
+tbody td.action-cell {
+  width: 14%;
+}
+
 .job-main,
 .download-stack,
 .action-stack,
@@ -313,9 +348,91 @@ thead th {
   flex-direction: column;
 }
 
+.job-main strong,
+.job-main span,
+.job-main code {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .action-cell {
   text-align: center;
   vertical-align: middle;
+  width: 120px;
+}
+
+.status-cell {
+  text-align: center;
+  vertical-align: middle;
+  width: 190px;
+}
+
+.download-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.status-stack {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  align-items: center;
+}
+
+.status-chip {
+  min-width: 132px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: rgba(67, 54, 42, 0.08);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.status-chip:hover {
+  transform: translateY(-1px);
+}
+
+.status-chip.is-active {
+  color: #fffaf3;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+}
+
+.status-not-applied {
+  border-color: rgba(181, 130, 33, 0.2);
+  background: rgba(181, 130, 33, 0.12);
+  color: #8d6512;
+}
+
+.status-not-applied.is-active {
+  background: #c98917;
+}
+
+.status-applied {
+  border-color: rgba(47, 111, 72, 0.2);
+  background: rgba(47, 111, 72, 0.12);
+  color: var(--success);
+}
+
+.status-applied.is-active {
+  background: #2f6f48;
+}
+
+.status-ignore {
+  border-color: rgba(155, 47, 47, 0.2);
+  background: rgba(155, 47, 47, 0.12);
+  color: var(--danger);
+}
+
+.status-ignore.is-active {
+  background: #9b2f2f;
 }
 
 .action-stack {

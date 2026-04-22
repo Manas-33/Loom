@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import json
+import mimetypes
 import os
 import queue
 import shutil
@@ -16,7 +18,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -25,6 +27,8 @@ JOBS_DIR = REPO_ROOT / "jobs"
 OUTPUT_DIR = REPO_ROOT / "output"
 STATIC_DIR = REPO_ROOT / "dashboard" / "static"
 INDEX_FILE = STATIC_DIR / "index.html"
+STATUS_FILE = REPO_ROOT / "dashboard_statuses.json"
+JOB_STATUSES = ("Not Applied", "Applied", "Ignore")
 
 RESUME_PROMPT = (
     "Read prompts/TASK.md, cv.md, and templates/template.tex. "
@@ -54,6 +58,10 @@ class JobRunRequest(BaseModel):
 
 class ScriptRunRequest(BaseModel):
     skip_existing: bool = True
+
+
+class StatusUpdateRequest(BaseModel):
+    status: str
 
 
 @dataclass
@@ -108,6 +116,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+def _load_statuses() -> dict[str, str]:
+    if not STATUS_FILE.exists():
+        return {}
+    try:
+        raw = json.loads(STATUS_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {
+        str(slug): status
+        for slug, status in raw.items()
+        if isinstance(status, str) and status in JOB_STATUSES
+    }
+
+
+def _save_statuses(statuses: dict[str, str]) -> None:
+    STATUS_FILE.write_text(json.dumps(statuses, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _get_status_for_slug(slug: str) -> str:
+    return _load_statuses().get(slug, "Not Applied")
 
 
 def _read_job_markdown(path: Path) -> dict[str, str]:
@@ -171,6 +203,8 @@ def _job_payload(job_file: Path) -> dict[str, Any]:
     return {
         "slug": slug,
         **details,
+        "status": _get_status_for_slug(slug),
+        "available_statuses": list(JOB_STATUSES),
         "job_file": str(job_file.relative_to(REPO_ROOT)),
         "output_dir": str(output_dir.relative_to(REPO_ROOT)),
         "artifacts": files,
@@ -208,6 +242,70 @@ def diagnostics() -> dict[str, Any]:
             "output_dir": OUTPUT_DIR.exists(),
         },
     }
+
+
+def _resolve_output_file(slug: str, filename: str) -> Path:
+    safe_name = Path(filename).name
+    path = OUTPUT_DIR / slug / safe_name
+    if not path.exists() or not path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    return path
+
+
+def _text_preview_html(path: Path) -> str:
+    content = html.escape(path.read_text(encoding="utf-8"))
+    title = html.escape(path.name)
+    return f"""<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <style>
+      body {{
+        margin: 0;
+        padding: 24px;
+        background: #191614;
+        color: #f5efe8;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }}
+      main {{
+        max-width: 1100px;
+        margin: 0 auto;
+      }}
+      h1 {{
+        margin: 0 0 16px;
+        font: 600 1.1rem system-ui, sans-serif;
+      }}
+      pre {{
+        margin: 0;
+        padding: 20px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        border-radius: 18px;
+        background: #231d19;
+        border: 1px solid rgba(255,255,255,0.08);
+      }}
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{title}</h1>
+      <pre>{content}</pre>
+    </main>
+  </body>
+</html>"""
+
+
+def _inline_file_response(path: Path) -> Response:
+    suffix = path.suffix.lower()
+    if suffix in {".json", ".tex", ".md", ".txt"}:
+        return HTMLResponse(_text_preview_html(path))
+
+    media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    headers = {"Content-Disposition": f'inline; filename="{path.name}"'}
+    return FileResponse(path, media_type=media_type, headers=headers)
 
 
 def _resolve_targets(request: JobRunRequest, artifact_name: str) -> list[Path]:
@@ -344,6 +442,17 @@ async def api_jobs() -> JSONResponse:
     return JSONResponse({"jobs": list_jobs()})
 
 
+@app.post("/api/jobs/{slug}/status")
+async def update_job_status(slug: str, request: StatusUpdateRequest) -> JSONResponse:
+    if request.status not in JOB_STATUSES:
+        raise HTTPException(status_code=400, detail="Invalid status")
+
+    statuses = _load_statuses()
+    statuses[slug] = request.status
+    _save_statuses(statuses)
+    return JSONResponse({"slug": slug, "status": request.status})
+
+
 @app.get("/api/diagnostics")
 async def api_diagnostics() -> JSONResponse:
     return JSONResponse(diagnostics())
@@ -351,11 +460,14 @@ async def api_diagnostics() -> JSONResponse:
 
 @app.get("/api/files/{slug}/{filename}")
 async def api_file(slug: str, filename: str) -> FileResponse:
-    safe_name = Path(filename).name
-    path = OUTPUT_DIR / slug / safe_name
-    if not path.exists() or not path.is_file():
-        raise HTTPException(status_code=404, detail="File not found")
+    path = _resolve_output_file(slug, filename)
     return FileResponse(path)
+
+
+@app.get("/view/{slug}/{filename}")
+async def view_file(slug: str, filename: str) -> Response:
+    path = _resolve_output_file(slug, filename)
+    return _inline_file_response(path)
 
 
 @app.post("/api/run/prepare")

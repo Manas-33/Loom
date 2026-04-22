@@ -36,7 +36,31 @@ function artifactPill(label, enabled) {
 }
 
 function fileLink(slug, filename, label) {
-  return `<a class="file-link" href="/api/files/${encodeURIComponent(slug)}/${encodeURIComponent(filename)}">${escapeHtml(label)}</a>`;
+  return `<a class="file-link" href="/view/${encodeURIComponent(slug)}/${encodeURIComponent(filename)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
+}
+
+function statusControls(job) {
+  const options = (job.available_statuses || ["Not Applied", "Applied", "Ignore"])
+    .map((status) => {
+      const tone = status.toLowerCase().replaceAll(" ", "-");
+      const activeClass = job.status === status ? " is-active" : "";
+      return `
+        <button
+          class="status-chip status-${tone}${activeClass}"
+          data-status-slug="${escapeHtml(job.slug)}"
+          data-status-value="${escapeHtml(status)}"
+          type="button"
+        >
+          ${escapeHtml(status)}
+        </button>
+      `;
+    })
+    .join("");
+  return `
+    <div class="status-stack" role="group" aria-label="Status for ${escapeHtml(job.slug)}">
+      ${options}
+    </div>
+  `;
 }
 
 function renderJobs() {
@@ -50,7 +74,7 @@ function renderJobs() {
 
   elements.jobCount.textContent = `${state.filteredJobs.length} jobs visible`;
   if (state.filteredJobs.length === 0) {
-    elements.tableBody.innerHTML = `<tr><td colspan="4" class="empty-row">No jobs match this filter.</td></tr>`;
+    elements.tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">No jobs match this filter.</td></tr>`;
     return;
   }
 
@@ -63,17 +87,17 @@ function renderJobs() {
         </div>
       `;
       const downloads = [
-        job.artifacts.resume_pdf ? fileLink(job.slug, "resume.pdf", "PDF") : "",
-        job.artifacts.resume_tex ? fileLink(job.slug, "resume.tex", "TeX") : "",
-        job.artifacts.cover_letter_docx ? fileLink(job.slug, "cover_letter.docx", "DOCX") : "",
-        job.artifacts.cover_letter_json ? fileLink(job.slug, "cover_letter.json", "JSON") : "",
+        job.artifacts.resume_pdf ? fileLink(job.slug, "resume.pdf", "View PDF") : "",
+        job.artifacts.resume_tex ? fileLink(job.slug, "resume.tex", "View TeX") : "",
+        job.artifacts.cover_letter_docx ? fileLink(job.slug, "cover_letter.docx", "Open DOCX") : "",
+        job.artifacts.cover_letter_json ? fileLink(job.slug, "cover_letter.json", "View JSON") : "",
       ]
         .filter(Boolean)
         .join(" ");
 
       return `
         <tr>
-          <td>
+          <td class="job-cell">
             <div class="job-main">
               <strong>${escapeHtml(job.title || job.slug)}</strong>
               <span>${escapeHtml(job.company || "Unknown company")}</span>
@@ -91,6 +115,7 @@ function renderJobs() {
             </div>
           </td>
           <td><div class="download-stack">${downloads || '<span class="muted">No files yet</span>'}</div></td>
+          <td class="status-cell">${statusControls(job)}</td>
           <td class="action-cell">${actions}</td>
         </tr>
       `;
@@ -245,6 +270,28 @@ elements.cancelButton.addEventListener("click", async () => {
 });
 
 elements.tableBody.addEventListener("click", async (event) => {
+  const statusButton = event.target.closest("button[data-status-slug][data-status-value]");
+  if (statusButton) {
+    const slug = statusButton.dataset.statusSlug;
+    const nextStatus = statusButton.dataset.statusValue;
+    const previousValue = state.jobs.find((job) => job.slug === slug)?.status || "Not Applied";
+    if (previousValue === nextStatus) {
+      return;
+    }
+
+    try {
+      const data = await fetchJson(`/api/jobs/${encodeURIComponent(slug)}/status`, {
+        method: "POST",
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      state.jobs = state.jobs.map((job) => (job.slug === slug ? { ...job, status: data.status } : job));
+      renderJobs();
+    } catch (error) {
+      elements.runStatus.textContent = `Status update failed: ${error.message}`;
+    }
+    return;
+  }
+
   const button = event.target.closest("button[data-action]");
   if (!button) {
     return;
