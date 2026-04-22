@@ -1,6 +1,9 @@
 const state = {
   jobs: [],
   filteredJobs: [],
+  currentPageJobs: [],
+  currentPage: 1,
+  pageSize: 10,
   currentRunId: null,
   currentSource: null,
 };
@@ -9,6 +12,10 @@ const elements = {
   tableBody: document.getElementById("jobs-table-body"),
   jobCount: document.getElementById("job-count"),
   jobFilter: document.getElementById("job-filter"),
+  paginationSummary: document.getElementById("pagination-summary"),
+  paginationPage: document.getElementById("pagination-page"),
+  paginationPrev: document.getElementById("pagination-prev"),
+  paginationNext: document.getElementById("pagination-next"),
   prepareForm: document.getElementById("prepare-form"),
   refreshButton: document.getElementById("refresh-button"),
   pipelineButton: document.getElementById("pipeline-button"),
@@ -40,27 +47,35 @@ function fileLink(slug, filename, label) {
 }
 
 function statusControls(job) {
-  const options = (job.available_statuses || ["Not Applied", "Applied", "Ignore"])
-    .map((status) => {
-      const tone = status.toLowerCase().replaceAll(" ", "-");
-      const activeClass = job.status === status ? " is-active" : "";
-      return `
-        <button
-          class="status-chip status-${tone}${activeClass}"
-          data-status-slug="${escapeHtml(job.slug)}"
-          data-status-value="${escapeHtml(status)}"
-          type="button"
-        >
-          ${escapeHtml(status)}
-        </button>
-      `;
-    })
+  const tone = String(job.status).toLowerCase().replaceAll(" ", "-");
+  const options = (job.available_statuses || ["Not Applied", "Applied", "Reject", "Ignore"])
+    .map(
+      (status) =>
+        `<option value="${escapeHtml(status)}"${job.status === status ? " selected" : ""}>${escapeHtml(status)}</option>`,
+    )
     .join("");
   return `
-    <div class="status-stack" role="group" aria-label="Status for ${escapeHtml(job.slug)}">
-      ${options}
+    <div class="status-stack">
+      <span class="status-pill status-${tone}">${escapeHtml(job.status)}</span>
+      <label class="status-field">
+        <select class="status-select" data-status-slug="${escapeHtml(job.slug)}" aria-label="Status for ${escapeHtml(job.slug)}">
+          ${options}
+        </select>
+      </label>
     </div>
   `;
+}
+
+function statusCellClass(status) {
+  return `status-cell status-cell-${String(status).toLowerCase().replaceAll(" ", "-")}`;
+}
+
+function statusRowClass(status) {
+  return `job-row job-row-${String(status).toLowerCase().replaceAll(" ", "-")}`;
+}
+
+function clampPage(page, totalPages) {
+  return Math.min(Math.max(page, 1), Math.max(totalPages, 1));
 }
 
 function renderJobs() {
@@ -73,13 +88,30 @@ function renderJobs() {
   });
 
   elements.jobCount.textContent = `${state.filteredJobs.length} jobs visible`;
+  const totalPages = Math.max(Math.ceil(state.filteredJobs.length / state.pageSize), 1);
+  state.currentPage = clampPage(state.currentPage, totalPages);
+
   if (state.filteredJobs.length === 0) {
-    elements.tableBody.innerHTML = `<tr><td colspan="5" class="empty-row">No jobs match this filter.</td></tr>`;
+    state.currentPageJobs = [];
+    elements.tableBody.innerHTML = `<tr><td colspan="6" class="empty-row">No jobs match this filter.</td></tr>`;
+    elements.paginationSummary.textContent = "Showing 0-0 of 0 jobs";
+    elements.paginationPage.textContent = "Page 1 of 1";
+    elements.paginationPrev.disabled = true;
+    elements.paginationNext.disabled = true;
     return;
   }
 
-  elements.tableBody.innerHTML = state.filteredJobs
-    .map((job) => {
+  const startIndex = (state.currentPage - 1) * state.pageSize;
+  const endIndex = startIndex + state.pageSize;
+  state.currentPageJobs = state.filteredJobs.slice(startIndex, endIndex);
+
+  elements.paginationSummary.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, state.filteredJobs.length)} of ${state.filteredJobs.length} jobs`;
+  elements.paginationPage.textContent = `Page ${state.currentPage} of ${totalPages}`;
+  elements.paginationPrev.disabled = state.currentPage === 1;
+  elements.paginationNext.disabled = state.currentPage === totalPages;
+
+  elements.tableBody.innerHTML = state.currentPageJobs
+    .map((job, index) => {
       const actions = `
         <div class="action-stack">
           <button class="mini-button" data-action="resume" data-slug="${job.slug}">Resume</button>
@@ -96,7 +128,8 @@ function renderJobs() {
         .join(" ");
 
       return `
-        <tr>
+        <tr class="${statusRowClass(job.status)}">
+          <td class="serial-cell">${startIndex + index + 1}</td>
           <td class="job-cell">
             <div class="job-main">
               <strong>${escapeHtml(job.title || job.slug)}</strong>
@@ -115,7 +148,7 @@ function renderJobs() {
             </div>
           </td>
           <td><div class="download-stack">${downloads || '<span class="muted">No files yet</span>'}</div></td>
-          <td class="status-cell">${statusControls(job)}</td>
+          <td class="${statusCellClass(job.status)}">${statusControls(job)}</td>
           <td class="action-cell">${actions}</td>
         </tr>
       `;
@@ -225,7 +258,18 @@ async function startRun(url, body = {}) {
   trackRun(data.run_id, data.stream_url);
 }
 
-elements.jobFilter.addEventListener("input", renderJobs);
+elements.jobFilter.addEventListener("input", () => {
+  state.currentPage = 1;
+  renderJobs();
+});
+elements.paginationPrev.addEventListener("click", () => {
+  state.currentPage -= 1;
+  renderJobs();
+});
+elements.paginationNext.addEventListener("click", () => {
+  state.currentPage += 1;
+  renderJobs();
+});
 elements.refreshButton.addEventListener("click", async () => {
   await Promise.all([loadJobs(), loadDiagnostics()]);
 });
@@ -270,28 +314,6 @@ elements.cancelButton.addEventListener("click", async () => {
 });
 
 elements.tableBody.addEventListener("click", async (event) => {
-  const statusButton = event.target.closest("button[data-status-slug][data-status-value]");
-  if (statusButton) {
-    const slug = statusButton.dataset.statusSlug;
-    const nextStatus = statusButton.dataset.statusValue;
-    const previousValue = state.jobs.find((job) => job.slug === slug)?.status || "Not Applied";
-    if (previousValue === nextStatus) {
-      return;
-    }
-
-    try {
-      const data = await fetchJson(`/api/jobs/${encodeURIComponent(slug)}/status`, {
-        method: "POST",
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      state.jobs = state.jobs.map((job) => (job.slug === slug ? { ...job, status: data.status } : job));
-      renderJobs();
-    } catch (error) {
-      elements.runStatus.textContent = `Status update failed: ${error.message}`;
-    }
-    return;
-  }
-
   const button = event.target.closest("button[data-action]");
   if (!button) {
     return;
@@ -300,6 +322,32 @@ elements.tableBody.addEventListener("click", async (event) => {
   const action = button.dataset.action;
   const url = action === "resume" ? "/api/run/opencode-resume" : "/api/run/opencode-cover";
   await startRun(url, { slug });
+});
+
+elements.tableBody.addEventListener("change", async (event) => {
+  const select = event.target.closest("select[data-status-slug]");
+  if (!select) {
+    return;
+  }
+
+  const slug = select.dataset.statusSlug;
+  const nextStatus = select.value;
+  const previousValue = state.jobs.find((job) => job.slug === slug)?.status || "Not Applied";
+  if (previousValue === nextStatus) {
+    return;
+  }
+
+  try {
+    const data = await fetchJson(`/api/jobs/${encodeURIComponent(slug)}/status`, {
+      method: "POST",
+      body: JSON.stringify({ status: nextStatus }),
+    });
+    state.jobs = state.jobs.map((job) => (job.slug === slug ? { ...job, status: data.status } : job));
+    renderJobs();
+  } catch (error) {
+    select.value = previousValue;
+    elements.runStatus.textContent = `Status update failed: ${error.message}`;
+  }
 });
 
 Promise.all([loadJobs(), loadDiagnostics()]).catch((error) => {

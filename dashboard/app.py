@@ -28,7 +28,7 @@ OUTPUT_DIR = REPO_ROOT / "output"
 STATIC_DIR = REPO_ROOT / "dashboard" / "static"
 INDEX_FILE = STATIC_DIR / "index.html"
 STATUS_FILE = REPO_ROOT / "dashboard_statuses.json"
-JOB_STATUSES = ("Not Applied", "Applied", "Ignore")
+JOB_STATUSES = ("Not Applied", "Applied", "Reject", "Ignore")
 
 RESUME_PROMPT = (
     "Read prompts/TASK.md, cv.md, and templates/template.tex. "
@@ -200,6 +200,17 @@ def _job_payload(job_file: Path) -> dict[str, Any]:
         "cover_letter_json": (output_dir / "cover_letter.json").exists(),
         "cover_letter_docx": (output_dir / "cover_letter.docx").exists(),
     }
+    timestamp_candidates: list[float] = []
+    if job_file.exists():
+        timestamp_candidates.append(job_file.stat().st_mtime)
+    if output_dir.exists():
+        timestamp_candidates.append(output_dir.stat().st_mtime)
+        for child in output_dir.iterdir():
+            try:
+                timestamp_candidates.append(child.stat().st_mtime)
+            except OSError:
+                continue
+    sort_timestamp = max(timestamp_candidates, default=0.0)
     return {
         "slug": slug,
         **details,
@@ -208,14 +219,15 @@ def _job_payload(job_file: Path) -> dict[str, Any]:
         "job_file": str(job_file.relative_to(REPO_ROOT)),
         "output_dir": str(output_dir.relative_to(REPO_ROOT)),
         "artifacts": files,
+        "sort_timestamp": sort_timestamp,
     }
 
 
 def list_jobs() -> list[dict[str, Any]]:
     job_slugs = {path.stem for path in JOBS_DIR.glob("*.md")} if JOBS_DIR.exists() else set()
     output_slugs = {path.name for path in OUTPUT_DIR.iterdir() if path.is_dir()} if OUTPUT_DIR.exists() else set()
-    all_slugs = sorted(job_slugs | output_slugs)
-    return [_job_payload(JOBS_DIR / f"{slug}.md") for slug in all_slugs]
+    jobs = [_job_payload(JOBS_DIR / f"{slug}.md") for slug in (job_slugs | output_slugs)]
+    return sorted(jobs, key=lambda job: (-job["sort_timestamp"], job["slug"]))
 
 
 def diagnostics() -> dict[str, Any]:
