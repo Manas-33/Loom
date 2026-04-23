@@ -530,6 +530,42 @@ async def update_job_status(slug: str, request: StatusUpdateRequest) -> JSONResp
     statuses = _load_statuses()
     statuses[slug] = request.status
     _save_statuses(statuses)
+    
+    # Also update jobs.xlsx if possible
+    if JOBS_XLSX.exists():
+        try:
+            from openpyxl import load_workbook
+            wb = load_workbook(JOBS_XLSX)
+            ws = wb.active
+            
+            headers = [str(cell.value) if cell.value else "" for cell in ws[1]]
+            try:
+                col_company = headers.index("Company")
+                col_title = headers.index("Title")
+                col_loc = headers.index("Location")
+                col_status = headers.index("Status")
+                
+                for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                    company = str(row[col_company] or "").strip()
+                    title = str(row[col_title] or "").strip()
+                    location = str(row[col_loc] or "").strip()
+                    
+                    row_slug = f"{company}_{title}"
+                    if location:
+                        row_slug += f"_{location}"
+                    row_slug = re.sub(r'[^\w\-]', '_', row_slug)
+                    row_slug = re.sub(r'_+', '_', row_slug)
+                    row_slug = row_slug[:100]
+                    
+                    if row_slug == slug:
+                        ws.cell(row=row_idx, column=col_status + 1, value=request.status)
+                        wb.save(JOBS_XLSX)
+                        break
+            except ValueError:
+                pass  # Missing headers
+        except Exception as e:
+            print(f"Error updating jobs.xlsx: {e}")
+
     return JSONResponse({"slug": slug, "status": request.status})
 
 
