@@ -49,6 +49,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -779,3 +783,245 @@ tbody td.action-cell {
     justify-content: space-between;
   }
 }
+
+/* ── Quick Add panel ─────────────────────────────────────────────── */
+
+.quick-add-panel {
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.quick-add-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.quick-add-paste-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.quick-add-paste-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.quick-add-textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.quick-add-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(181, 82, 51, 0.15);
+}
+
+[data-theme="dark"] .quick-add-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(222, 130, 92, 0.2);
+}
+
+.quick-add-textarea::placeholder {
+  color: var(--muted);
+}
+
+.quick-add-paste-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.quick-add-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.quick-add-source.source-linkedin {
+  background: rgba(10, 102, 194, 0.12);
+  color: #0a66c2;
+  border: 1px solid rgba(10, 102, 194, 0.2);
+}
+
+[data-theme="dark"] .quick-add-source.source-linkedin {
+  background: rgba(10, 102, 194, 0.18);
+  color: #5da4e8;
+}
+
+.quick-add-source.source-handshake {
+  background: rgba(47, 111, 72, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(47, 111, 72, 0.2);
+}
+
+[data-theme="dark"] .quick-add-source.source-handshake {
+  background: rgba(47, 111, 72, 0.18);
+  color: #6db68a;
+}
+
+.quick-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.quick-add-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(245, 237, 225, 0.6));
+}
+
+[data-theme="dark"] .quick-add-fields {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.02));
+}
+
+.quick-add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quick-add-field.field-wide {
+  grid-column: 1 / -1;
+}
+
+.quick-add-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.quick-add-field input,
+.quick-add-field textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.quick-add-field input:focus,
+.quick-add-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(181, 82, 51, 0.15);
+}
+
+[data-theme="dark"] .quick-add-field input:focus,
+[data-theme="dark"] .quick-add-field textarea:focus {
+  box-shadow: 0 0 0 3px rgba(222, 130, 92, 0.2);
+}
+
+.quick-add-field textarea {
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.quick-add-field input.field-populated {
+  border-color: rgba(47, 111, 72, 0.35);
+  background: rgba(47, 111, 72, 0.04);
+}
+
+[data-theme="dark"] .quick-add-field input.field-populated,
+[data-theme="dark"] .quick-add-field textarea.field-populated {
+  border-color: rgba(109, 182, 138, 0.3);
+  background: rgba(109, 182, 138, 0.06);
+}
+
+.quick-add-field textarea.field-populated {
+  border-color: rgba(47, 111, 72, 0.35);
+  background: rgba(47, 111, 72, 0.04);
+}
+
+.quick-add-form-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.quick-add-status {
+  margin: 0;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.quick-add-status.status-success {
+  background: rgba(47, 111, 72, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(47, 111, 72, 0.2);
+}
+
+.quick-add-status.status-error {
+  background: rgba(155, 47, 47, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(155, 47, 47, 0.2);
+}
+
+.quick-add-status.status-loading {
+  background: rgba(181, 130, 33, 0.1);
+  color: #8d6512;
+  border: 1px solid rgba(181, 130, 33, 0.2);
+}
+
+[data-theme="dark"] .quick-add-status.status-loading {
+  color: #d4a94e;
+}
+
+@media (max-width: 900px) {
+  .quick-add-fields {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .quick-add-panel {
+    padding: 16px;
+  }
+
+  .quick-add-fields {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .quick-add-paste-actions,
+  .quick-add-form-actions {
+    flex-direction: column;
+  }
+
+  .quick-add-paste-actions .button,
+  .quick-add-form-actions .button {
+    width: 100%;
+  }
+}
+

@@ -159,7 +159,10 @@ function renderJobs() {
           <td class="serial-cell">${startIndex + index + 1}</td>
           <td class="job-cell">
             <div class="job-main">
-              <strong>${escapeHtml(job.title || job.slug)}</strong>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <strong>${escapeHtml(job.title || job.slug)}</strong>
+                ${job.url ? `<a href="${escapeHtml(job.url)}" target="_blank" class="mini-button" style="text-decoration: none; padding: 2px 8px; font-size: 0.75rem; min-width: auto; min-height: auto;">Link ↗</a>` : ''}
+              </div>
               <span>${escapeHtml(job.company || "Unknown company")}</span>
               <span>${escapeHtml(job.location || "Location not set")}</span>
               <code>${escapeHtml(job.slug)}</code>
@@ -385,3 +388,178 @@ Promise.all([loadJobs(), loadDiagnostics()]).catch((error) => {
 });
 
 initializeTheme();
+
+
+// ── Quick Add ────────────────────────────────────────────────────────
+
+const WIDE_FIELDS = new Set(["About_the_job", "Company_Intro", "Title_URL", "Company_URL"]);
+const TEXTAREA_FIELDS = new Set(["About_the_job", "Company_Intro"]);
+
+const qa = {
+  toggle: document.getElementById("quick-add-toggle"),
+  toggleLabel: document.getElementById("quick-add-toggle-label"),
+  body: document.getElementById("quick-add-body"),
+  raw: document.getElementById("quick-add-raw"),
+  parseBtn: document.getElementById("quick-add-parse-btn"),
+  clearBtn: document.getElementById("quick-add-clear-btn"),
+  source: document.getElementById("quick-add-source"),
+  form: document.getElementById("quick-add-form"),
+  fieldsContainer: document.getElementById("quick-add-fields"),
+  saveBtn: document.getElementById("quick-add-save-btn"),
+  status: document.getElementById("quick-add-status"),
+};
+
+let qaHeaders = [];
+
+qa.toggle.addEventListener("click", () => {
+  const isHidden = qa.body.hidden;
+  qa.body.hidden = !isHidden;
+  qa.toggleLabel.textContent = isHidden ? "Hide" : "Show";
+});
+
+function showQAStatus(message, type) {
+  qa.status.hidden = false;
+  qa.status.textContent = message;
+  qa.status.className = `quick-add-status status-${type}`;
+}
+
+function hideQAStatus() {
+  qa.status.hidden = true;
+}
+
+function buildFormFields(headers, values = {}) {
+  qa.fieldsContainer.innerHTML = "";
+
+  headers.forEach((header) => {
+    const isWide = WIDE_FIELDS.has(header);
+    const isTextarea = TEXTAREA_FIELDS.has(header);
+    const value = values[header] || "";
+    const populated = value.trim().length > 0;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = `quick-add-field${isWide ? " field-wide" : ""}`;
+
+    const label = document.createElement("label");
+    label.setAttribute("for", `qa-field-${header}`);
+    label.textContent = header.replaceAll("_", " ");
+
+    let input;
+    if (isTextarea) {
+      input = document.createElement("textarea");
+      input.rows = 4;
+    } else {
+      input = document.createElement("input");
+      input.type = "text";
+    }
+    input.id = `qa-field-${header}`;
+    input.name = header;
+    input.value = value;
+    if (populated) {
+      input.classList.add("field-populated");
+    }
+
+    input.addEventListener("input", () => {
+      if (input.value.trim()) {
+        input.classList.add("field-populated");
+      } else {
+        input.classList.remove("field-populated");
+      }
+    });
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(input);
+    qa.fieldsContainer.appendChild(wrapper);
+  });
+}
+
+async function loadHeaders() {
+  if (qaHeaders.length > 0) return;
+  try {
+    const data = await fetchJson("/api/quick-add/headers");
+    qaHeaders = data.headers;
+  } catch {
+    qaHeaders = [
+      "Company", "Title", "Category", "Location", "Title_URL", "Status",
+      "Date", "About_the_job", "Posted_time", "Salary", "People_applied",
+      "Company_URL", "Company_follower", "Company_size",
+      "Count_of_employee_onLinkedIn", "Company_Intro", "Is this an internship",
+    ];
+  }
+}
+
+qa.parseBtn.addEventListener("click", async () => {
+  const rawText = qa.raw.value.trim();
+  if (!rawText) {
+    showQAStatus("Paste some text first.", "error");
+    return;
+  }
+
+  hideQAStatus();
+  showQAStatus("Parsing…", "loading");
+
+  try {
+    const data = await fetchJson("/api/quick-add/parse", {
+      method: "POST",
+      body: JSON.stringify({ raw_text: rawText }),
+    });
+
+    await loadHeaders();
+
+    qa.source.hidden = false;
+    qa.source.textContent = `Detected source: ${data.source === "linkedin" ? "LinkedIn" : "Handshake"}`;
+    qa.source.className = `quick-add-source source-${data.source}`;
+
+    buildFormFields(qaHeaders, data.fields);
+
+    qa.form.hidden = false;
+    hideQAStatus();
+  } catch (error) {
+    showQAStatus(`Parse failed: ${error.message}`, "error");
+  }
+});
+
+qa.clearBtn.addEventListener("click", () => {
+  qa.raw.value = "";
+  qa.form.hidden = true;
+  qa.source.hidden = true;
+  qa.fieldsContainer.innerHTML = "";
+  hideQAStatus();
+});
+
+qa.form.addEventListener("reset", () => {
+  setTimeout(() => {
+    qa.fieldsContainer.querySelectorAll("input, textarea").forEach((el) => {
+      el.classList.remove("field-populated");
+    });
+  }, 0);
+});
+
+qa.form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  showQAStatus("Saving…", "loading");
+
+  const fields = {};
+  qaHeaders.forEach((header) => {
+    const input = document.getElementById(`qa-field-${header}`);
+    fields[header] = input ? input.value : "";
+  });
+
+  try {
+    await fetchJson("/api/quick-add/save", {
+      method: "POST",
+      body: JSON.stringify({ fields }),
+    });
+
+    showQAStatus("✓ Saved to jobs.xlsx successfully!", "success");
+
+    qa.raw.value = "";
+    qa.form.hidden = true;
+    qa.source.hidden = true;
+    qa.fieldsContainer.innerHTML = "";
+
+    setTimeout(hideQAStatus, 4000);
+  } catch (error) {
+    showQAStatus(`Save failed: ${error.message}`, "error");
+  }
+});
+

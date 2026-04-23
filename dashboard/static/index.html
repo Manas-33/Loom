@@ -27,6 +27,43 @@
         </div>
       </header>
 
+      <section id="quick-add-panel" class="panel quick-add-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Quick Add</h2>
+            <p>Paste raw LinkedIn or Handshake page text to auto-fill the form below.</p>
+          </div>
+          <button id="quick-add-toggle" class="button button-secondary" type="button">
+            <span id="quick-add-toggle-label">Show</span>
+          </button>
+        </div>
+
+        <div id="quick-add-body" class="quick-add-body" hidden>
+          <div class="quick-add-paste-row">
+            <label for="quick-add-raw">
+              <span>Raw page text</span>
+              <textarea id="quick-add-raw" class="quick-add-textarea" rows="6" placeholder="Paste the full page text from a LinkedIn or Handshake job listing here…"></textarea>
+            </label>
+            <div class="quick-add-paste-actions">
+              <button id="quick-add-parse-btn" class="button" type="button">Parse text</button>
+              <button id="quick-add-clear-btn" class="button button-secondary" type="button">Clear</button>
+            </div>
+          </div>
+
+          <p id="quick-add-source" class="quick-add-source" hidden></p>
+
+          <form id="quick-add-form" class="quick-add-form" hidden>
+            <div id="quick-add-fields" class="quick-add-fields"></div>
+            <div class="quick-add-form-actions">
+              <button type="submit" id="quick-add-save-btn" class="button">Save to jobs.xlsx</button>
+              <button type="reset" id="quick-add-reset-btn" class="button button-secondary">Reset form</button>
+            </div>
+          </form>
+
+          <p id="quick-add-status" class="quick-add-status" hidden></p>
+        </div>
+      </section>
+
       <main class="layout">
         <section class="panel controls-panel">
           <div class="panel-heading">

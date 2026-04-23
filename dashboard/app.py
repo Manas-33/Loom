@@ -9,6 +9,7 @@ import queue
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -23,6 +24,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Make the repo root importable so we can use md_internships_to_xlsx
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from md_internships_to_xlsx import HEADERS as XLSX_HEADERS, parse_frontmatter, parse_handshake, parse_linkedin
+
+JOBS_XLSX = REPO_ROOT / "jobs.xlsx"
 JOBS_DIR = REPO_ROOT / "jobs"
 OUTPUT_DIR = REPO_ROOT / "output"
 STATIC_DIR = REPO_ROOT / "dashboard" / "static"
@@ -223,10 +232,69 @@ def _job_payload(job_file: Path) -> dict[str, Any]:
     }
 
 
+import re
+
+_url_cache: dict[str, str] = {}
+_url_cache_mtime = 0.0
+
+def _get_slug_to_url() -> dict[str, str]:
+    global _url_cache, _url_cache_mtime
+    if not JOBS_XLSX.exists():
+        return {}
+    
+    mtime = JOBS_XLSX.stat().st_mtime
+    if mtime == _url_cache_mtime:
+        return _url_cache
+
+    try:
+        from openpyxl import load_workbook
+        wb = load_workbook(JOBS_XLSX, data_only=True)
+        ws = wb.active
+        
+        headers = [str(cell.value) if cell.value else "" for cell in ws[1]]
+        try:
+            col_company = headers.index("Company")
+            col_title = headers.index("Title")
+            col_loc = headers.index("Location")
+            col_url = headers.index("Title_URL")
+        except ValueError:
+            return {}
+
+        mapping = {}
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            company = str(row[col_company] or "").strip()
+            title = str(row[col_title] or "").strip()
+            location = str(row[col_loc] or "").strip()
+            url = str(row[col_url] or "").strip()
+            
+            slug = f"{company}_{title}"
+            if location:
+                slug += f"_{location}"
+            slug = re.sub(r'[^\w\-]', '_', slug)
+            slug = re.sub(r'_+', '_', slug)
+            slug = slug[:100]
+            
+            mapping[slug] = url
+            
+        _url_cache = mapping
+        _url_cache_mtime = mtime
+        return mapping
+    except Exception:
+        return {}
+
+
 def list_jobs() -> list[dict[str, Any]]:
     job_slugs = {path.stem for path in JOBS_DIR.glob("*.md")} if JOBS_DIR.exists() else set()
     output_slugs = {path.name for path in OUTPUT_DIR.iterdir() if path.is_dir()} if OUTPUT_DIR.exists() else set()
-    jobs = [_job_payload(JOBS_DIR / f"{slug}.md") for slug in (job_slugs | output_slugs)]
+    
+    slug_to_url = _get_slug_to_url()
+    
+    jobs = []
+    for slug in (job_slugs | output_slugs):
+        payload = _job_payload(JOBS_DIR / f"{slug}.md")
+        payload["url"] = slug_to_url.get(slug, "")
+        jobs.append(payload)
+        
     return sorted(jobs, key=lambda job: (-job["sort_timestamp"], job["slug"]))
 
 
@@ -548,3 +616,63 @@ async def cancel_run(run_id: str) -> JSONResponse:
         state.status = "cancelled"
         await manager.emit(state, "log", {"line": "Cancellation requested.", "label": "system"})
     return JSONResponse({"run_id": run_id, "status": state.status})
+
+
+# ── Quick-Add feature ──────────────────────────────────────────────
+
+
+class ParseJobRequest(BaseModel):
+    raw_text: str
+
+
+class AddJobRequest(BaseModel):
+    fields: dict[str, str]
+
+
+@app.get("/api/quick-add/headers")
+async def quick_add_headers() -> JSONResponse:
+    """Return the ordered list of column headers for the jobs sheet."""
+    return JSONResponse({"headers": list(XLSX_HEADERS)})
+
+
+@app.post("/api/quick-add/parse")
+async def quick_add_parse(request: ParseJobRequest) -> JSONResponse:
+    """Parse pasted raw text (LinkedIn or Handshake) and return field dict."""
+    raw = request.raw_text.strip()
+    if not raw:
+        raise HTTPException(status_code=400, detail="No text provided.")
+
+    meta, body = parse_frontmatter(raw)
+    src = meta.get("source", "")
+
+    if "linkedin.com" in src.lower() or "## About the job" in body:
+        parsed = parse_linkedin(body, meta)
+        source = "linkedin"
+    else:
+        parsed = parse_handshake(body, meta)
+        source = "handshake"
+
+    return JSONResponse({"fields": parsed, "source": source})
+
+
+@app.post("/api/quick-add/save")
+async def quick_add_save(request: AddJobRequest) -> JSONResponse:
+    """Append a row dict to jobs.xlsx and return success."""
+    from openpyxl import load_workbook, Workbook
+
+    row = {h: request.fields.get(h, "") for h in XLSX_HEADERS}
+
+    if JOBS_XLSX.exists():
+        wb = load_workbook(JOBS_XLSX)
+        ws = wb.active
+    else:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Sheet1"
+        ws.append(list(XLSX_HEADERS))
+
+    ws.append([row.get(h, "") for h in XLSX_HEADERS])
+    wb.save(JOBS_XLSX)
+
+    return JSONResponse({"ok": True, "row": row})
+
