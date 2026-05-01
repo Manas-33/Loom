@@ -229,20 +229,77 @@ input {
   font-size: 0.95rem;
 }
 
+.table-controls {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.table-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
 .form-grid input[type="number"],
 .form-grid input[type="text"],
-.table-filter input {
+.table-filter input,
+.table-filter-select {
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--surface);
   color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
 }
 
 .form-grid input[type="number"]::placeholder,
 .form-grid input[type="text"]::placeholder,
 .table-filter input::placeholder {
   color: var(--muted);
+}
+
+.table-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-width: 180px;
+  padding-right: 38px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%236c6258' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+[data-theme="dark"] .table-filter-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%23b9aa9b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+
+.table-filter-select:focus,
+.table-filter input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(181, 82, 51, 0.15);
+}
+
+[data-theme="dark"] .table-filter-select:focus,
+[data-theme="dark"] .table-filter input:focus {
+  box-shadow: 0 0 0 3px rgba(222, 130, 92, 0.2);
+}
+
+.table-filter-select option {
+  background: var(--panel-strong);
+  color: var(--text);
 }
 
 .checkbox-row {
@@ -944,7 +1001,9 @@ tbody td.action-cell {
   font-family: "SFMono-Regular", "Menlo", monospace;
   font-size: 0.84rem;
   line-height: 1.45;
-  resize: vertical;
+  resize: vertical !important;
+  overflow: auto;
+  min-height: 80px;
 }
 
 .quick-add-field input.field-populated {

@@ -119,10 +119,22 @@
               <h2>Jobs</h2>
               <p id="job-count">Loading…</p>
             </div>
-            <label class="table-filter">
-              <span>Filter</span>
-              <input id="job-filter" type="search" placeholder="Search company, title, slug" />
-            </label>
+            <div class="table-controls">
+              <label class="table-filter">
+                <span>Search</span>
+                <input id="job-filter" type="search" placeholder="Search company, title, slug" />
+              </label>
+              <label class="table-filter">
+                <span>Status</span>
+                <select id="status-filter" class="table-filter-select">
+                  <option value="">All statuses</option>
+                  <option value="Not Applied">Not Applied</option>
+                  <option value="Applied">Applied</option>
+                  <option value="Reject">Reject</option>
+                  <option value="Ignore">Ignore</option>
+                </select>
+              </label>
+            </div>
           </div>
           <div class="table-wrap">
             <table>

@@ -13,6 +13,7 @@ const elements = {
   tableBody: document.getElementById("jobs-table-body"),
   jobCount: document.getElementById("job-count"),
   jobFilter: document.getElementById("job-filter"),
+  statusFilter: document.getElementById("status-filter"),
   paginationSummary: document.getElementById("pagination-summary"),
   paginationPage: document.getElementById("pagination-page"),
   paginationPrev: document.getElementById("pagination-prev"),
@@ -105,14 +106,25 @@ function initializeTheme() {
   applyTheme(prefersDark ? "dark" : "light");
 }
 
+const STATUS_SORT_ORDER = { "Not Applied": 0, "Applied": 1, "Reject": 2, "Ignore": 3 };
+
 function renderJobs() {
   const query = elements.jobFilter.value.trim().toLowerCase();
-  state.filteredJobs = state.jobs.filter((job) => {
-    const haystack = [job.slug, job.company, job.title, job.location, job.category]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(query);
-  });
+  const statusQuery = elements.statusFilter.value;
+  state.filteredJobs = state.jobs
+    .filter((job) => {
+      const haystack = [job.slug, job.company, job.title, job.location, job.category]
+        .join(" ")
+        .toLowerCase();
+      const matchesSearch = haystack.includes(query);
+      const matchesStatus = !statusQuery || job.status === statusQuery;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      const ra = STATUS_SORT_ORDER[a.status] ?? 99;
+      const rb = STATUS_SORT_ORDER[b.status] ?? 99;
+      return ra - rb;
+    });
 
   elements.jobCount.textContent = `${state.filteredJobs.length} jobs visible`;
   const totalPages = Math.max(Math.ceil(state.filteredJobs.length / state.pageSize), 1);
@@ -239,7 +251,8 @@ async function loadDiagnostics() {
 }
 
 function appendLog(line, label) {
-  const prefix = label ? `[${label}] ` : "";
+  const shortLabel = label ? label.split(':')[0] : "";
+  const prefix = shortLabel ? `[${shortLabel}] ` : "";
   if (elements.logOutput.textContent === "Waiting for a run…") {
     elements.logOutput.textContent = "";
   }
@@ -289,6 +302,10 @@ async function startRun(url, body = {}) {
 }
 
 elements.jobFilter.addEventListener("input", () => {
+  state.currentPage = 1;
+  renderJobs();
+});
+elements.statusFilter.addEventListener("change", () => {
   state.currentPage = 1;
   renderJobs();
 });
