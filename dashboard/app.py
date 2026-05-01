@@ -569,6 +569,76 @@ async def update_job_status(slug: str, request: StatusUpdateRequest) -> JSONResp
     return JSONResponse({"slug": slug, "status": request.status})
 
 
+@app.delete("/api/jobs/{slug}")
+async def delete_job(slug: str) -> JSONResponse:
+    removed = {"xlsx_row": False, "job_md": False, "output_dir": False, "status_entry": False}
+
+    if JOBS_XLSX.exists():
+        try:
+            from openpyxl import load_workbook
+            wb = load_workbook(JOBS_XLSX)
+            ws = wb.active
+
+            headers = [str(cell.value) if cell.value else "" for cell in ws[1]]
+            try:
+                col_company = headers.index("Company")
+                col_title = headers.index("Title")
+                col_loc = headers.index("Location")
+
+                target_row = None
+                for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                    company = str(row[col_company] or "").strip()
+                    title = str(row[col_title] or "").strip()
+                    location = str(row[col_loc] or "").strip()
+
+                    row_slug = f"{company}_{title}"
+                    if location:
+                        row_slug += f"_{location}"
+                    row_slug = re.sub(r'[^\w\-]', '_', row_slug)
+                    row_slug = re.sub(r'_+', '_', row_slug)
+                    row_slug = row_slug[:100]
+
+                    if row_slug == slug:
+                        target_row = row_idx
+                        break
+
+                if target_row is not None:
+                    ws.delete_rows(target_row, 1)
+                    wb.save(JOBS_XLSX)
+                    removed["xlsx_row"] = True
+            except ValueError:
+                pass
+        except Exception as e:
+            print(f"Error deleting from jobs.xlsx: {e}")
+
+    job_md = JOBS_DIR / f"{slug}.md"
+    if job_md.exists():
+        try:
+            job_md.unlink()
+            removed["job_md"] = True
+        except Exception as e:
+            print(f"Error deleting {job_md}: {e}")
+
+    output_dir = OUTPUT_DIR / slug
+    if output_dir.exists() and output_dir.is_dir():
+        try:
+            shutil.rmtree(output_dir)
+            removed["output_dir"] = True
+        except Exception as e:
+            print(f"Error deleting {output_dir}: {e}")
+
+    statuses = _load_statuses()
+    if slug in statuses:
+        del statuses[slug]
+        _save_statuses(statuses)
+        removed["status_entry"] = True
+
+    if not any(removed.values()):
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    return JSONResponse({"slug": slug, "removed": removed})
+
+
 @app.get("/api/diagnostics")
 async def api_diagnostics() -> JSONResponse:
     return JSONResponse(diagnostics())

@@ -30,7 +30,42 @@ const elements = {
   logOutput: document.getElementById("log-output"),
   runStatus: document.getElementById("run-status"),
   cancelButton: document.getElementById("cancel-button"),
+  confirmModal: document.getElementById("confirm-modal"),
+  confirmModalTarget: document.getElementById("confirm-modal-target"),
+  confirmModalCancel: document.getElementById("confirm-modal-cancel"),
+  confirmModalConfirm: document.getElementById("confirm-modal-confirm"),
 };
+
+function confirmDelete(label) {
+  return new Promise((resolve) => {
+    elements.confirmModalTarget.textContent = `"${label}"`;
+    elements.confirmModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    elements.confirmModalConfirm.focus();
+
+    const cleanup = (result) => {
+      elements.confirmModal.hidden = true;
+      document.body.style.overflow = "";
+      elements.confirmModalConfirm.removeEventListener("click", onConfirm);
+      elements.confirmModalCancel.removeEventListener("click", onCancel);
+      elements.confirmModal.removeEventListener("click", onBackdrop);
+      document.removeEventListener("keydown", onKey);
+      resolve(result);
+    };
+    const onConfirm = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    const onBackdrop = (e) => { if (e.target === elements.confirmModal) cleanup(false); };
+    const onKey = (e) => {
+      if (e.key === "Escape") cleanup(false);
+      else if (e.key === "Enter") cleanup(true);
+    };
+
+    elements.confirmModalConfirm.addEventListener("click", onConfirm);
+    elements.confirmModalCancel.addEventListener("click", onCancel);
+    elements.confirmModal.addEventListener("click", onBackdrop);
+    document.addEventListener("keydown", onKey);
+  });
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -157,6 +192,15 @@ function renderJobs() {
           <button class="mini-button" data-action="cover" data-slug="${job.slug}">Cover</button>
         </div>
       `;
+      const serialLabel = escapeHtml(job.title || job.slug);
+      const serialCell = `
+        <div class="serial-wrap">
+          <span class="serial-number">${startIndex + index + 1}</span>
+          <button class="row-delete" data-action="delete" data-slug="${job.slug}" data-label="${serialLabel}" aria-label="Delete ${serialLabel}" title="Delete row">
+            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M4.22 4.22a.75.75 0 0 1 1.06 0L8 6.94l2.72-2.72a.75.75 0 1 1 1.06 1.06L9.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L8 9.06l-2.72 2.72a.75.75 0 0 1-1.06-1.06L6.94 8 4.22 5.28a.75.75 0 0 1 0-1.06Z"/></svg>
+          </button>
+        </div>
+      `;
       const downloads = [
         job.artifacts.resume_pdf ? fileLink(job.slug, "resume.pdf", "View PDF") : "",
         job.artifacts.resume_tex ? fileLink(job.slug, "resume.tex", "View TeX") : "",
@@ -168,7 +212,7 @@ function renderJobs() {
 
       return `
         <tr class="${statusRowClass(job.status)}">
-          <td class="serial-cell">${startIndex + index + 1}</td>
+          <td class="serial-cell">${serialCell}</td>
           <td class="job-cell">
             <div class="job-main">
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -370,6 +414,25 @@ elements.tableBody.addEventListener("click", async (event) => {
   }
   const slug = button.dataset.slug;
   const action = button.dataset.action;
+
+  if (action === "delete") {
+    const label = button.dataset.label || slug;
+    const confirmed = await confirmDelete(label);
+    if (!confirmed) return;
+
+    button.disabled = true;
+    try {
+      await fetchJson(`/api/jobs/${encodeURIComponent(slug)}`, { method: "DELETE" });
+      state.jobs = state.jobs.filter((job) => job.slug !== slug);
+      renderJobs();
+      elements.runStatus.textContent = `Deleted ${label}`;
+    } catch (error) {
+      button.disabled = false;
+      elements.runStatus.textContent = `Delete failed: ${error.message}`;
+    }
+    return;
+  }
+
   const url = action === "resume" ? "/api/run/opencode-resume" : "/api/run/opencode-cover";
   await startRun(url, { slug });
 });

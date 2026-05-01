@@ -171,6 +171,24 @@
       </main>
     </div>
 
+    <div class="modal-backdrop" id="confirm-modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <div class="modal-card">
+        <h3 class="modal-title" id="confirm-modal-title">Delete job?</h3>
+        <p class="modal-target" id="confirm-modal-target"></p>
+        <p class="modal-body">This will permanently remove:</p>
+        <ul class="modal-list">
+          <li>The row from <code>jobs.xlsx</code></li>
+          <li>The job markdown file</li>
+          <li>All generated artifacts (resume, cover letter, PDF)</li>
+        </ul>
+        <p class="modal-warning">This action cannot be undone.</p>
+        <div class="modal-actions">
+          <button class="button button-secondary" id="confirm-modal-cancel" type="button">Cancel</button>
+          <button class="button button-danger" id="confirm-modal-confirm" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+
     <script src="/static/app.js" defer></script>
   </body>
 </html>

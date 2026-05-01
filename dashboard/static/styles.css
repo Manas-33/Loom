@@ -670,6 +670,65 @@ tbody td.action-cell {
   align-items: center;
 }
 
+.serial-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+}
+
+.serial-number {
+  transition: opacity 140ms ease;
+}
+
+.row-delete {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: auto;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease, background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.job-row:hover .serial-number {
+  opacity: 0;
+}
+
+.job-row:hover .row-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.row-delete:hover {
+  background: rgba(155, 47, 47, 0.12);
+  border-color: rgba(155, 47, 47, 0.3);
+  color: var(--danger);
+}
+
+.row-delete:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  outline: none;
+  border-color: var(--accent);
+}
+
+.row-delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .job-main strong {
   font-size: 1rem;
 }
@@ -1082,5 +1141,106 @@ tbody td.action-cell {
   .quick-add-form-actions .button {
     width: 100%;
   }
+}
+
+/* ── Confirm modal ───────────────────────────────────────────────── */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(31, 22, 16, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: modal-fade-in 160ms ease-out;
+}
+
+[data-theme="dark"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.modal-card {
+  width: min(440px, 100%);
+  padding: 28px 30px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(255, 252, 247, 0.98), rgba(245, 234, 220, 0.96));
+  box-shadow: var(--shadow);
+  animation: modal-slide-up 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+[data-theme="dark"] .modal-card {
+  background: linear-gradient(135deg, rgba(40, 33, 28, 0.98), rgba(28, 22, 19, 0.98));
+  border-color: rgba(242, 176, 141, 0.18);
+}
+
+.modal-title {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.modal-target {
+  margin: 0 0 18px;
+  color: var(--accent-dark);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.modal-body {
+  margin: 0 0 8px;
+  color: var(--muted);
+}
+
+.modal-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.modal-list code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-subtle);
+  font-size: 0.88rem;
+}
+
+.modal-warning {
+  margin: 0 0 22px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(155, 47, 47, 0.1);
+  border: 1px solid rgba(155, 47, 47, 0.22);
+  color: var(--danger);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-actions .button {
+  min-height: 42px;
+  padding: 10px 20px;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-slide-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
