@@ -8,3 +8,4 @@ cv.md
 .DS_Store
 dashboard_statuses.json
 __pycache__
+.cursor

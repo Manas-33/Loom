@@ -51,6 +51,36 @@ COVER_PROMPT = (
     "(valid JSON only, schema in templates/cover_letter_template.md)."
 )
 
+REFINE_REMOVE_PROMPT = (
+    "Refine an existing tailored resume by removing its single least-relevant bullet.\n\n"
+    "Job description: {job_file}\n"
+    "Current resume: {tex_file}\n\n"
+    "Steps:\n"
+    "1. Read both files.\n"
+    "2. Identify the single \\resumeItem{{...}} that is least relevant to the job description "
+    "(lowest pattern-match against JD themes, technologies, and domain).\n"
+    "3. Use the Edit tool to remove that one \\resumeItem{{...}} line from {tex_file}. "
+    "Do not modify anything else — no other bullets, no formatting, no skills row.\n"
+    "4. Print only: REMOVED: <first 80 chars of removed bullet>\n"
+)
+
+REFINE_ADD_PROMPT = (
+    "Refine an existing tailored resume by adding one more relevant bullet.\n\n"
+    "Job description: {job_file}\n"
+    "Master CV pool: cv.md\n"
+    "Current resume: {tex_file}\n\n"
+    "Steps:\n"
+    "1. Read all three files.\n"
+    "2. Find the single bullet from cv.md that (a) is not already in the current resume and "
+    "(b) best matches a theme from the job description.\n"
+    "3. Decide which existing role or project in the current resume it belongs under (closest semantic fit).\n"
+    "4. Use the Edit tool to insert it as a new \\resumeItem{{...}} line inside that role/project's "
+    "\\resumeItemListStart ... \\resumeItemListEnd block.\n"
+    "5. Keep the original facts and metrics. Only rephrase using nouns from the JD — never lift JD "
+    "adjectives like 'demanding', 'high-performance', 'fast-paced'.\n"
+    "6. Print only: ADDED: <first 80 chars of added bullet> to <role/project name>\n"
+)
+
 
 class PrepareRequest(BaseModel):
     limit: int | None = None
@@ -71,6 +101,10 @@ class ScriptRunRequest(BaseModel):
 
 class StatusUpdateRequest(BaseModel):
     status: str
+
+
+class RefineRequest(BaseModel):
+    action: str  # "remove" or "add"
 
 
 @dataclass
@@ -312,6 +346,7 @@ def diagnostics() -> dict[str, Any]:
         "commands": {
             "python": python_exe,
             "opencode": shutil.which("opencode"),
+            "claude": shutil.which("claude"),
             "pdflatex": shutil.which("pdflatex"),
         },
         "packages": packages,
@@ -474,6 +509,60 @@ async def _run_opencode(state: RunState, request: JobRunRequest, mode: str) -> N
         code = await _stream_process(state, ["opencode", "run", prompt], label)
         if code != 0:
             raise RuntimeError(f"opencode {mode} exited with code {code} for {slug}")
+
+
+async def _recompile_pdf(state: RunState, slug: str) -> None:
+    tex_dir = OUTPUT_DIR / slug
+    tex_file = tex_dir / "resume.tex"
+    if not tex_file.exists():
+        await manager.emit(state, "log", {"line": f"No resume.tex at {tex_file}", "label": "compile"})
+        raise RuntimeError("resume.tex missing — cannot recompile")
+
+    cmd = ["pdflatex", "-interaction=nonstopmode", "-output-directory", str(tex_dir), "resume.tex"]
+    # Run twice to settle refs, mirroring scripts/compile_pdfs.py
+    for _ in range(2):
+        code = await _stream_process(state, cmd, f"compile:{slug}")
+        if code != 0:
+            raise RuntimeError(f"pdflatex exited with code {code} for {slug}")
+
+    for ext in (".aux", ".log", ".out", ".toc"):
+        aux = tex_dir / f"resume{ext}"
+        if aux.exists():
+            try:
+                aux.unlink()
+            except OSError:
+                pass
+
+
+async def _run_refine(state: RunState, slug: str, action: str) -> None:
+    job_file = JOBS_DIR / f"{slug}.md"
+    tex_file = OUTPUT_DIR / slug / "resume.tex"
+    pdf_file = OUTPUT_DIR / slug / "resume.pdf"
+    if not job_file.exists():
+        raise RuntimeError(f"job file not found: {job_file}")
+    if not tex_file.exists() or not pdf_file.exists():
+        raise RuntimeError("resume.tex or resume.pdf missing — generate the resume first")
+
+    if action == "remove":
+        prompt = REFINE_REMOVE_PROMPT.format(
+            job_file=job_file.relative_to(REPO_ROOT).as_posix(),
+            tex_file=tex_file.relative_to(REPO_ROOT).as_posix(),
+        )
+    elif action == "add":
+        prompt = REFINE_ADD_PROMPT.format(
+            job_file=job_file.relative_to(REPO_ROOT).as_posix(),
+            tex_file=tex_file.relative_to(REPO_ROOT).as_posix(),
+        )
+    else:
+        raise RuntimeError(f"unknown refine action: {action!r}")
+
+    label = f"refine-{action}:{slug}"
+    cmd = ["claude", "--dangerously-skip-permissions", "-p", prompt]
+    code = await _stream_process(state, cmd, label)
+    if code != 0:
+        raise RuntimeError(f"claude refine ({action}) exited with code {code} for {slug}")
+
+    await _recompile_pdf(state, slug)
 
 
 async def _run_script(state: RunState, script_name: str, skip_existing: bool) -> None:
@@ -694,6 +783,16 @@ async def run_build_cover_docx(request: ScriptRunRequest) -> JSONResponse:
 @app.post("/api/run/pipeline")
 async def run_pipeline() -> JSONResponse:
     return JSONResponse(_launch("Full pipeline", _pipeline))
+
+
+@app.post("/api/jobs/{slug}/refine")
+async def refine_resume(slug: str, request: RefineRequest) -> JSONResponse:
+    if request.action not in ("remove", "add"):
+        raise HTTPException(status_code=400, detail="action must be 'remove' or 'add'")
+    if not (OUTPUT_DIR / slug / "resume.pdf").exists():
+        raise HTTPException(status_code=400, detail="resume.pdf not generated yet")
+    title = f"Refine {slug} ({request.action})"
+    return JSONResponse(_launch(title, lambda state: _run_refine(state, slug, request.action)))
 
 
 @app.get("/api/runs/{run_id}/stream")

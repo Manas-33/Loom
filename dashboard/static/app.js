@@ -186,6 +186,14 @@ function renderJobs() {
 
   elements.tableBody.innerHTML = state.currentPageJobs
     .map((job, index) => {
+      const refineButtons = job.artifacts.resume_pdf
+        ? `
+          <div class="refine-row">
+            <button class="mini-button" data-action="refine-remove" data-slug="${job.slug}" title="Remove the least relevant bullet">− Bullet</button>
+            <button class="mini-button" data-action="refine-add" data-slug="${job.slug}" title="Add one more relevant bullet from cv.md">+ Bullet</button>
+          </div>
+        `
+        : "";
       const actions = `
         <div class="action-stack">
           <button class="mini-button" data-action="resume" data-slug="${job.slug}">Resume</button>
@@ -232,6 +240,7 @@ function renderJobs() {
               ${artifactPill("json", job.artifacts.cover_letter_json)}
               ${artifactPill("docx", job.artifacts.cover_letter_docx)}
             </div>
+            ${refineButtons}
           </td>
           <td><div class="download-stack">${downloads || '<span class="muted">No files yet</span>'}</div></td>
           <td class="${statusCellClass(job.status)}">${statusControls(job)}</td>
@@ -430,6 +439,12 @@ elements.tableBody.addEventListener("click", async (event) => {
       button.disabled = false;
       elements.runStatus.textContent = `Delete failed: ${error.message}`;
     }
+    return;
+  }
+
+  if (action === "refine-remove" || action === "refine-add") {
+    const refineAction = action === "refine-remove" ? "remove" : "add";
+    await startRun(`/api/jobs/${encodeURIComponent(slug)}/refine`, { action: refineAction });
     return;
   }
 
