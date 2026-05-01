@@ -25,9 +25,9 @@ by selecting the best-fit content from `cv.md` and filling in `templates/templat
 - Score each role in `cv.md` against the job description: overlapping skills, domain, seniority, tech stack
 - Pick the top 3 scoring roles and place them in the Experience section
 - Order the 3 selected roles by date, most recent first — regardless of relevance score
-- For each role, write **2–3 bullets** using the **original bullets from cv.md as your base**
-  - Keep the core fact, metric, and technology from the original bullet intact
-  - Rephrase the wording to naturally mirror the job description's language and keywords
+- For each role, write **up to 3 bullets, but only include a bullet if it would survive on its own merits against the JD**. A 1-2 bullet role is better than a 3-bullet role padded with irrelevant work. Drop any bullet that is pure infra/DevOps when the JD is about applied AI workflows (and vice versa).
+  - Use the **original bullets from cv.md as your base** — keep the core fact, metric, and technology intact
+  - Use the JD's **nouns** (technologies, domains, workflow names) where you have legitimate experience. Do **not** lift the JD's **adjectives** ("demanding", "high-performance", "fast-paced") into bullets — those are the JD describing itself, not you describing your work.
   - Reorder to surface the most relevant bullet first
 - **Never invent metrics, outcomes, or responsibilities not present in cv.md**
 - **Never change dates, company names, job titles, or numbers**
@@ -36,8 +36,8 @@ by selecting the best-fit content from `cv.md` and filling in `templates/templat
 
 - Same scoring approach: tech stack overlap, problem domain, skills demonstrated
 - Pick the top 3 projects and place them in the Projects section
-- For each project, write **2–3 bullets** using the **original bullets from cv.md as your base**
-  - Same rules as above: rephrase to match job language, keep facts intact
+- For each project, write **up to 3 bullets, but only include a bullet if it would survive on its own merits against the JD**. Drop bullets that don't pattern-match a JD theme rather than padding to hit a count.
+  - Same rules as above: nouns-from-JD only (not adjectives), keep facts intact
   - Lead with the most relevant bullet for this role
 
 
@@ -48,19 +48,32 @@ Follow this logic for each skill in `cv.md`:
 **Always include:**
 - Every language in the Languages row — never drop any
  
+**Cap the Tech row at ~10 items.** Quality over coverage — a focused list signals fit, a long list signals noise.
+
 **Include if at least one is true:**
 - The skill is explicitly mentioned or implied in the job description
-- It is a widely recognised, mainstream tool (e.g. Docker, AWS, PostgreSQL, React, Node.js, Git, Redis)
- 
-**Drop if both are true:**
-- It is a niche or specialised tool (e.g. Jaeger, Prometheus, Grafana, Qdrant, pyannote, Tree-sitter, Celery Beat, MVCC)
-- The job description does not mention it or anything closely related
+- It maps directly to the JD's stated stack or use case
+
+**Drop even mainstream tools if they don't map to the role.** A widely-recognised tool is not automatically worth including. Examples:
+- PyTorch / TensorFlow / Hugging Face / scikit-learn → keep for ML engineering / research roles, **drop for AI workflow / automation / tooling roles** where they are noise
+- Heavy backend frameworks (Spring Boot, Django) → drop if the JD is frontend or AI-tooling focused
+- Niche/specialised tools (Jaeger, Prometheus, Grafana, Qdrant, pyannote, Tree-sitter, Celery Beat, MVCC) → drop unless the JD mentions them or something closely related
  
 **Add from job description (ATS keyword matching):**
 - If the JD mentions a skill/tool you have used anywhere in `cv.md` — in any bullet, project, or skill — include it in the skills section
 - If the JD mentions a concept you have demonstrated but under a different name (e.g. JD says "REST APIs" and cv.md shows FastAPI/Django endpoints, or JD says "CI/CD" and cv.md shows GitHub Actions), include the JD's terminology in the skills section
  
 Reorder within each category so the most relevant skills appear first.
+
+---
+
+## Anti-patterns — do not write
+
+- **Trailing filler clauses.** Cut anything like "...to support data-driven insights", "...for high-performance systems", "...improving speed, reliability, and quality". Let the concrete action stand on its own.
+- **Word repetition inside one sentence.** E.g. "supporting various AI providers to support diverse use cases" — pick one verb.
+- **Forced analogies.** Phrases like "analogous to X workflows" or "mirroring X" usually mean the work doesn't actually map. Either it cleanly fits the JD's domain or it doesn't — if it doesn't, the bullet should be dropped, not stretched.
+- **JD adjectives describing your environment.** Words like "demanding", "high-performance", "fast-paced", "high-pressure" belong to the JD's self-description, not your bullets.
+- **Vague closers.** "...enabling actionable insights", "...driving operational efficiency", "...supporting business outcomes" — these add no signal. If the bullet needs an outcome, use a concrete one from cv.md or none at all.
 
 ---
 
