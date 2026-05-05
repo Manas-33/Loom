@@ -189,6 +189,19 @@
       </div>
     </div>
 
+    <div class="modal-backdrop" id="duplicate-modal" hidden role="dialog" aria-modal="true" aria-labelledby="duplicate-modal-title">
+      <div class="modal-card modal-card-wide">
+        <h3 class="modal-title" id="duplicate-modal-title">Duplicate job found</h3>
+        <p class="modal-body" id="duplicate-modal-reason"></p>
+        <div id="duplicate-modal-details" class="duplicate-details"></div>
+        <p class="modal-warning modal-warning-amber">This job already exists in the sheet. Add it anyway?</p>
+        <div class="modal-actions">
+          <button class="button button-secondary" id="duplicate-modal-cancel" type="button">Cancel</button>
+          <button class="button" id="duplicate-modal-confirm" type="button">Add anyway</button>
+        </div>
+      </div>
+    </div>
+
     <script src="/static/app.js" defer></script>
   </body>
 </html>

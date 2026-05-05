@@ -629,9 +629,63 @@ qa.form.addEventListener("reset", () => {
   }, 0);
 });
 
+function confirmDuplicate(reason, existing) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("duplicate-modal");
+    const reasonEl = document.getElementById("duplicate-modal-reason");
+    const detailsEl = document.getElementById("duplicate-modal-details");
+    const confirmBtn = document.getElementById("duplicate-modal-confirm");
+    const cancelBtn = document.getElementById("duplicate-modal-cancel");
+
+    reasonEl.textContent = `Match: ${reason}`;
+
+    // Build the details grid showing existing entry
+    const showFields = ["Company", "Title", "Location", "Category", "Status", "Salary", "Posted_time", "Title_URL"];
+    detailsEl.innerHTML = "";
+    showFields.forEach((key) => {
+      const val = (existing[key] || "").trim();
+      if (!val) return;
+      const label = document.createElement("span");
+      label.className = "dup-label";
+      label.textContent = key.replaceAll("_", " ");
+      const value = document.createElement("span");
+      value.className = "dup-value";
+      value.textContent = val;
+      detailsEl.appendChild(label);
+      detailsEl.appendChild(value);
+    });
+
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+    confirmBtn.focus();
+
+    const cleanup = (result) => {
+      modal.hidden = true;
+      document.body.style.overflow = "";
+      confirmBtn.removeEventListener("click", onConfirm);
+      cancelBtn.removeEventListener("click", onCancel);
+      modal.removeEventListener("click", onBackdrop);
+      document.removeEventListener("keydown", onKey);
+      resolve(result);
+    };
+    const onConfirm = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    const onBackdrop = (e) => { if (e.target === modal) cleanup(false); };
+    const onKey = (e) => {
+      if (e.key === "Escape") cleanup(false);
+      else if (e.key === "Enter") cleanup(true);
+    };
+
+    confirmBtn.addEventListener("click", onConfirm);
+    cancelBtn.addEventListener("click", onCancel);
+    modal.addEventListener("click", onBackdrop);
+    document.addEventListener("keydown", onKey);
+  });
+}
+
 qa.form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  showQAStatus("Saving…", "loading");
+  showQAStatus("Checking for duplicates…", "loading");
 
   const fields = {};
   qaHeaders.forEach((header) => {
@@ -640,6 +694,24 @@ qa.form.addEventListener("submit", async (event) => {
   });
 
   try {
+    // Check for duplicates first
+    const dupCheck = await fetchJson("/api/quick-add/check-duplicate", {
+      method: "POST",
+      body: JSON.stringify({ fields }),
+    });
+
+    if (dupCheck.duplicate) {
+      hideQAStatus();
+      const proceed = await confirmDuplicate(dupCheck.match_reason, dupCheck.existing);
+      if (!proceed) {
+        showQAStatus("Save cancelled — duplicate exists in sheet.", "error");
+        setTimeout(hideQAStatus, 4000);
+        return;
+      }
+    }
+
+    showQAStatus("Saving…", "loading");
+
     await fetchJson("/api/quick-add/save", {
       method: "POST",
       body: JSON.stringify({ fields }),

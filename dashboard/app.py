@@ -268,6 +268,23 @@ def _job_payload(job_file: Path) -> dict[str, Any]:
 
 import re
 
+
+def _cell_str(value: object) -> str:
+    """Replicate pandas str(NaN) → 'nan' so slugs match the filenames prepare_jobs.py creates."""
+    if value is None:
+        return "nan"
+    return str(value).strip()
+
+
+def _make_slug(company: str, title: str, location: str) -> str:
+    slug = f"{company}_{title}"
+    if location:
+        slug += f"_{location}"
+    slug = re.sub(r'[^\w\-]', '_', slug)
+    slug = re.sub(r'_+', '_', slug)
+    return slug[:100]
+
+
 _url_cache: dict[str, str] = {}
 _url_cache_mtime = 0.0
 
@@ -296,18 +313,12 @@ def _get_slug_to_url() -> dict[str, str]:
 
         mapping = {}
         for row in ws.iter_rows(min_row=2, values_only=True):
-            company = str(row[col_company] or "").strip()
-            title = str(row[col_title] or "").strip()
-            location = str(row[col_loc] or "").strip()
+            company = _cell_str(row[col_company])
+            title = _cell_str(row[col_title])
+            location = _cell_str(row[col_loc])
             url = str(row[col_url] or "").strip()
             
-            slug = f"{company}_{title}"
-            if location:
-                slug += f"_{location}"
-            slug = re.sub(r'[^\w\-]', '_', slug)
-            slug = re.sub(r'_+', '_', slug)
-            slug = slug[:100]
-            
+            slug = _make_slug(company, title, location)
             mapping[slug] = url
             
         _url_cache = mapping
@@ -635,17 +646,11 @@ async def update_job_status(slug: str, request: StatusUpdateRequest) -> JSONResp
                 col_status = headers.index("Status")
                 
                 for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-                    company = str(row[col_company] or "").strip()
-                    title = str(row[col_title] or "").strip()
-                    location = str(row[col_loc] or "").strip()
-                    
-                    row_slug = f"{company}_{title}"
-                    if location:
-                        row_slug += f"_{location}"
-                    row_slug = re.sub(r'[^\w\-]', '_', row_slug)
-                    row_slug = re.sub(r'_+', '_', row_slug)
-                    row_slug = row_slug[:100]
-                    
+                    row_slug = _make_slug(
+                        _cell_str(row[col_company]),
+                        _cell_str(row[col_title]),
+                        _cell_str(row[col_loc]),
+                    )
                     if row_slug == slug:
                         ws.cell(row=row_idx, column=col_status + 1, value=request.status)
                         wb.save(JOBS_XLSX)
@@ -676,17 +681,11 @@ async def delete_job(slug: str) -> JSONResponse:
 
                 target_row = None
                 for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-                    company = str(row[col_company] or "").strip()
-                    title = str(row[col_title] or "").strip()
-                    location = str(row[col_loc] or "").strip()
-
-                    row_slug = f"{company}_{title}"
-                    if location:
-                        row_slug += f"_{location}"
-                    row_slug = re.sub(r'[^\w\-]', '_', row_slug)
-                    row_slug = re.sub(r'_+', '_', row_slug)
-                    row_slug = row_slug[:100]
-
+                    row_slug = _make_slug(
+                        _cell_str(row[col_company]),
+                        _cell_str(row[col_title]),
+                        _cell_str(row[col_loc]),
+                    )
                     if row_slug == slug:
                         target_row = row_idx
                         break
@@ -830,6 +829,10 @@ class ParseJobRequest(BaseModel):
     raw_text: str
 
 
+class CheckDuplicateRequest(BaseModel):
+    fields: dict[str, str]
+
+
 class AddJobRequest(BaseModel):
     fields: dict[str, str]
 
@@ -838,6 +841,54 @@ class AddJobRequest(BaseModel):
 async def quick_add_headers() -> JSONResponse:
     """Return the ordered list of column headers for the jobs sheet."""
     return JSONResponse({"headers": list(XLSX_HEADERS)})
+
+
+@app.post("/api/quick-add/check-duplicate")
+async def quick_add_check_duplicate(request: CheckDuplicateRequest) -> JSONResponse:
+    """Check if a job already exists in the sheet by Title_URL or Company+Title."""
+    from openpyxl import load_workbook
+
+    if not JOBS_XLSX.exists():
+        return JSONResponse({"duplicate": False})
+
+    new_url = request.fields.get("Title_URL", "").strip()
+    new_company = request.fields.get("Company", "").strip().lower()
+    new_title = request.fields.get("Title", "").strip().lower()
+
+    if not new_url and not (new_company and new_title):
+        return JSONResponse({"duplicate": False})
+
+    try:
+        wb = load_workbook(JOBS_XLSX, data_only=True)
+        ws = wb.active
+        headers = [str(cell.value) if cell.value else "" for cell in ws[1]]
+
+        try:
+            col_url = headers.index("Title_URL")
+            col_company = headers.index("Company")
+            col_title = headers.index("Title")
+        except ValueError:
+            return JSONResponse({"duplicate": False})
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            row_url = str(row[col_url] or "").strip() if col_url < len(row) else ""
+            row_company = str(row[col_company] or "").strip() if col_company < len(row) else ""
+            row_title = str(row[col_title] or "").strip() if col_title < len(row) else ""
+
+            # Match by URL (strongest signal)
+            if new_url and row_url and new_url == row_url:
+                existing = {headers[i]: str(row[i] or "") for i in range(min(len(headers), len(row)))}
+                return JSONResponse({"duplicate": True, "match_reason": "Same job URL", "existing": existing})
+
+            # Match by Company + Title (fallback)
+            if new_company and new_title and row_company.lower() == new_company and row_title.lower() == new_title:
+                existing = {headers[i]: str(row[i] or "") for i in range(min(len(headers), len(row)))}
+                return JSONResponse({"duplicate": True, "match_reason": "Same company and title", "existing": existing})
+
+    except Exception:
+        return JSONResponse({"duplicate": False})
+
+    return JSONResponse({"duplicate": False})
 
 
 @app.post("/api/quick-add/parse")

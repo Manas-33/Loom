@@ -1268,6 +1268,57 @@ tbody td.action-cell {
   padding: 10px 20px;
 }
 
+/* ── Duplicate modal ────────────────────────────────────────────── */
+
+.modal-card-wide {
+  width: min(560px, 100%);
+}
+
+.modal-warning-amber {
+  background: rgba(181, 130, 33, 0.1);
+  border-color: rgba(181, 130, 33, 0.22);
+  color: #8d6512;
+}
+
+[data-theme="dark"] .modal-warning-amber {
+  background: rgba(181, 130, 33, 0.14);
+  color: #d4a94e;
+}
+
+.duplicate-details {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-muted);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.duplicate-details .dup-label {
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding-top: 2px;
+}
+
+.duplicate-details .dup-value {
+  color: var(--text);
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
 @keyframes modal-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
