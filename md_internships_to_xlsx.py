@@ -159,15 +159,17 @@ def parse_linkedin(body: str, meta: dict[str, str]) -> dict[str, str]:
             row["Company"] = first_co.group(1)
         row["Company_URL"] = first_co.group(2)
 
+    # Middle segment may be "Reposted 1 wk ago" or just "2 days ago" (no Reposted on first posts).
     meta_line = re.search(
-        r"^([^\n]+?)\s*·\s*Reposted\s+([^\n·]+)\s*·\s*(.+)$",
+        r"^([^\n]+?)\s*·\s*(?:(Reposted)\s+)?([^\n·]+)\s*·\s*(.+)$",
         body,
         re.M,
     )
     if meta_line:
         row["Location"] = meta_line.group(1).strip()
-        row["Posted_time"] = "Reposted " + meta_line.group(2).strip()
-        row["People_applied"] = meta_line.group(3).strip()
+        timing = meta_line.group(3).strip()
+        row["Posted_time"] = ("Reposted " + timing) if meta_line.group(2) else timing
+        row["People_applied"] = meta_line.group(4).strip()
 
     job_m = re.search(
         r"## About the job\s*\n+(.*?)(?=\n## |\Z)",
