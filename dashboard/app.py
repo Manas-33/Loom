@@ -522,6 +522,29 @@ async def _run_opencode(state: RunState, request: JobRunRequest, mode: str) -> N
             raise RuntimeError(f"opencode {mode} exited with code {code} for {slug}")
 
 
+async def _run_claude(state: RunState, request: JobRunRequest, mode: str) -> None:
+    artifact = "resume.tex" if mode == "resume" else "cover_letter.json"
+    targets = _resolve_targets(request, artifact)
+    if not targets:
+        await manager.emit(state, "log", {"line": "No matching jobs found.", "label": mode})
+        return
+
+    for path in targets:
+        slug = path.stem
+        prompt = RESUME_PROMPT.format(job_file=path.relative_to(REPO_ROOT).as_posix())
+        label = f"{mode}:{slug}"
+        if mode == "cover":
+            prompt = COVER_PROMPT.format(
+                job_file=path.relative_to(REPO_ROOT).as_posix(),
+                slug=slug,
+            )
+
+        await manager.emit(state, "log", {"line": f"Processing {slug}", "label": label})
+        code = await _stream_process(state, ["claude", "--dangerously-skip-permissions", "-p", prompt], label)
+        if code != 0:
+            raise RuntimeError(f"claude {mode} exited with code {code} for {slug}")
+
+
 async def _recompile_pdf(state: RunState, slug: str) -> None:
     tex_dir = OUTPUT_DIR / slug
     tex_file = tex_dir / "resume.tex"
@@ -587,8 +610,8 @@ async def _run_script(state: RunState, script_name: str, skip_existing: bool) ->
 
 async def _pipeline(state: RunState) -> None:
     await _run_prepare(state, PrepareRequest(skip_existing=True))
-    await _run_opencode(state, JobRunRequest(all_missing=True), "resume")
-    await _run_opencode(state, JobRunRequest(all_missing=True), "cover")
+    await _run_claude(state, JobRunRequest(all_missing=True), "resume")
+    await _run_claude(state, JobRunRequest(all_missing=True), "cover")
     await _run_script(state, "compile_pdfs.py", skip_existing=True)
     await _run_script(state, "build_cover_letters.py", skip_existing=True)
 
@@ -756,7 +779,7 @@ async def run_opencode_resume(request: JobRunRequest) -> JSONResponse:
 
 @app.post("/api/run/opencode-cover")
 async def run_opencode_cover(request: JobRunRequest) -> JSONResponse:
-    return JSONResponse(_launch("Write cover letters", lambda state: _run_opencode(state, request, "cover")))
+    return JSONResponse(_launch("Write cover letters", lambda state: _run_claude(state, request, "cover")))
 
 
 @app.post("/api/run/compile-pdfs")
