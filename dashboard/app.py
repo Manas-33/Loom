@@ -29,7 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from md_internships_to_xlsx import HEADERS as XLSX_HEADERS, parse_frontmatter, parse_handshake, parse_linkedin
+from md_internships_to_xlsx import HEADERS as XLSX_HEADERS, parse_frontmatter, parse_handshake, parse_indeed, parse_linkedin
 
 JOBS_XLSX = REPO_ROOT / "jobs.xlsx"
 JOBS_DIR = REPO_ROOT / "jobs"
@@ -38,6 +38,8 @@ STATIC_DIR = REPO_ROOT / "dashboard" / "static"
 INDEX_FILE = STATIC_DIR / "index.html"
 STATUS_FILE = REPO_ROOT / "dashboard_statuses.json"
 JOB_STATUSES = ("Not Applied", "Applied", "Reject", "Ignore")
+
+CLAUDE_MODEL = ""  # pin a model e.g. "claude-opus-4-5"; empty = CLI default
 
 RESUME_PROMPT = (
     "Read prompts/TASK.md, cv.md, and templates/template.tex. "
@@ -540,7 +542,11 @@ async def _run_claude(state: RunState, request: JobRunRequest, mode: str) -> Non
             )
 
         await manager.emit(state, "log", {"line": f"Processing {slug}", "label": label})
-        code = await _stream_process(state, ["claude", "--dangerously-skip-permissions", "-p", prompt], label)
+        cmd = ["claude", "--dangerously-skip-permissions"]
+        if CLAUDE_MODEL:
+            cmd += ["--model", CLAUDE_MODEL]
+        cmd += ["-p", prompt]
+        code = await _stream_process(state, cmd, label)
         if code != 0:
             raise RuntimeError(f"claude {mode} exited with code {code} for {slug}")
 
@@ -772,6 +778,16 @@ async def run_prepare(request: PrepareRequest) -> JSONResponse:
     return JSONResponse(_launch("Prepare jobs", lambda state: _run_prepare(state, request)))
 
 
+@app.post("/api/run/claude-resume")
+async def run_claude_resume(request: JobRunRequest) -> JSONResponse:
+    return JSONResponse(_launch("Tailor resumes", lambda state: _run_claude(state, request, "resume")))
+
+
+@app.post("/api/run/claude-cover")
+async def run_claude_cover(request: JobRunRequest) -> JSONResponse:
+    return JSONResponse(_launch("Write cover letters", lambda state: _run_claude(state, request, "cover")))
+
+
 @app.post("/api/run/opencode-resume")
 async def run_opencode_resume(request: JobRunRequest) -> JSONResponse:
     return JSONResponse(_launch("Tailor resumes", lambda state: _run_opencode(state, request, "resume")))
@@ -779,7 +795,7 @@ async def run_opencode_resume(request: JobRunRequest) -> JSONResponse:
 
 @app.post("/api/run/opencode-cover")
 async def run_opencode_cover(request: JobRunRequest) -> JSONResponse:
-    return JSONResponse(_launch("Write cover letters", lambda state: _run_claude(state, request, "cover")))
+    return JSONResponse(_launch("Write cover letters", lambda state: _run_opencode(state, request, "cover")))
 
 
 @app.post("/api/run/compile-pdfs")
@@ -916,7 +932,7 @@ async def quick_add_check_duplicate(request: CheckDuplicateRequest) -> JSONRespo
 
 @app.post("/api/quick-add/parse")
 async def quick_add_parse(request: ParseJobRequest) -> JSONResponse:
-    """Parse pasted raw text (LinkedIn or Handshake) and return field dict."""
+    """Parse pasted raw text (LinkedIn, Indeed, or Handshake) and return field dict."""
     raw = request.raw_text.strip()
     if not raw:
         raise HTTPException(status_code=400, detail="No text provided.")
@@ -924,7 +940,10 @@ async def quick_add_parse(request: ParseJobRequest) -> JSONResponse:
     meta, body = parse_frontmatter(raw)
     src = meta.get("source", "")
 
-    if "linkedin.com" in src.lower() or "## About the job" in body:
+    if "indeed.com" in src.lower() or "## Full job description" in body:
+        parsed = parse_indeed(body, meta)
+        source = "indeed"
+    elif "linkedin.com" in src.lower() or "## About the job" in body:
         parsed = parse_linkedin(body, meta)
         source = "linkedin"
     else:

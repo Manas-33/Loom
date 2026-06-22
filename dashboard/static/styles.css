@@ -1028,6 +1028,17 @@ tbody td.action-cell {
   color: #6db68a;
 }
 
+.quick-add-source.source-indeed {
+  background: rgba(85, 51, 255, 0.12);
+  color: #2557a7;
+  border: 1px solid rgba(85, 51, 255, 0.2);
+}
+
+[data-theme="dark"] .quick-add-source.source-indeed {
+  background: rgba(85, 51, 255, 0.18);
+  color: #8c79ff;
+}
+
 .quick-add-form {
   display: flex;
   flex-direction: column;
@@ -1118,6 +1129,14 @@ tbody td.action-cell {
 .quick-add-form-actions {
   display: flex;
   gap: 12px;
+}
+
+.quick-add-form-actions-top {
+  align-items: center;
+}
+
+.quick-add-form-actions-top .quick-add-source {
+  margin-right: auto;
 }
 
 .quick-add-status {

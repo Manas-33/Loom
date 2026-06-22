@@ -227,7 +227,10 @@ function renderJobs() {
                 <strong>${escapeHtml(job.title || job.slug)}</strong>
                 ${job.url ? `<a href="${escapeHtml(job.url)}" target="_blank" class="mini-button" style="text-decoration: none; padding: 2px 8px; font-size: 0.75rem; min-width: auto; min-height: auto;">Link ↗</a>` : ''}
               </div>
-              <span>${escapeHtml(job.company || "Unknown company")}</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>${escapeHtml(job.company || "Unknown company")}</span>
+                <button class="mini-button" data-action="copy-prompt" data-slug="${job.slug}" style="padding: 2px 8px; font-size: 0.75rem; min-width: auto; min-height: auto;" title="Copy the résumé-generation prompt for this job">⧉</button>
+              </div>
               <span>${escapeHtml(job.location || "Location not set")}</span>
               <code>${escapeHtml(job.slug)}</code>
             </div>
@@ -394,11 +397,11 @@ elements.prepareForm.addEventListener("submit", async (event) => {
 });
 
 elements.resumeMissingButton.addEventListener("click", async () => {
-  await startRun("/api/run/opencode-resume", { all_missing: true });
+  await startRun("/api/run/claude-resume", { all_missing: true });
 });
 
 elements.coverMissingButton.addEventListener("click", async () => {
-  await startRun("/api/run/opencode-cover", { all_missing: true });
+  await startRun("/api/run/claude-cover", { all_missing: true });
 });
 
 elements.compileButton.addEventListener("click", async () => {
@@ -448,7 +451,21 @@ elements.tableBody.addEventListener("click", async (event) => {
     return;
   }
 
-  const url = action === "resume" ? "/api/run/opencode-resume" : "/api/run/opencode-cover";
+  if (action === "copy-prompt") {
+    const prompt = `Read prompts/TASK.md, cv.md, and templates/template.tex. Then process only this one job file: jobs/${slug}.md. Write the tailored resume to the output path listed inside it.`;
+    const original = button.textContent;
+    try {
+      await navigator.clipboard.writeText(prompt);
+      button.textContent = "✓";
+    } catch {
+      window.prompt("Copy the résumé prompt:", prompt);
+      button.textContent = original;
+    }
+    setTimeout(() => { button.textContent = original; }, 1500);
+    return;
+  }
+
+  const url = action === "resume" ? "/api/run/claude-resume" : "/api/run/claude-cover";
   await startRun(url, { slug });
 });
 
@@ -601,7 +618,8 @@ qa.parseBtn.addEventListener("click", async () => {
     await loadHeaders();
 
     qa.source.hidden = false;
-    qa.source.textContent = `Detected source: ${data.source === "linkedin" ? "LinkedIn" : "Handshake"}`;
+    const sourceLabels = { linkedin: "LinkedIn", indeed: "Indeed", handshake: "Handshake" };
+    qa.source.textContent = `Detected source: ${sourceLabels[data.source] || "Handshake"}`;
     qa.source.className = `quick-add-source source-${data.source}`;
 
     buildFormFields(qaHeaders, data.fields);
