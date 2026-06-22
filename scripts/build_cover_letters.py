@@ -124,7 +124,7 @@ def build_docx(data: dict, out_path: str) -> None:
         para.paragraph_format.space_after = Pt(8)
 
     doc.add_paragraph()
-    close = doc.add_paragraph("Sincerely,")
+    close = doc.add_paragraph("Best,")
     close.paragraph_format.space_after = Pt(4)
 
     sig = doc.add_paragraph()

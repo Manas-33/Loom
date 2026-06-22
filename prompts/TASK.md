@@ -39,6 +39,7 @@ by selecting the best-fit content from `cv.md` and filling in `templates/templat
 - For each project, write **up to 3 bullets, but only include a bullet if it would survive on its own merits against the JD**. Drop bullets that don't pattern-match a JD theme rather than padding to hit a count.
   - Same rules as above: nouns-from-JD only (not adjectives), keep facts intact
   - Lead with the most relevant bullet for this role
+  - **Each project section must be self-contained.** A recruiter reading only the resume — with no prior knowledge of the project — should understand what it does from the bullets alone. Use the project's description line in `cv.md` to inform how you write the first bullet, but integrate the context naturally; do not prepend it as a separate sentence or force a semicolon construction.
 
 
 ## Technical Skills
