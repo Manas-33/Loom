@@ -231,10 +231,137 @@ def parse_linkedin(body: str, meta: dict[str, str]) -> dict[str, str]:
     return row
 
 
+_COMPANY_VERBS = (
+    "is",
+    "are",
+    "was",
+    "were",
+    "gets",
+    "provides",
+    "offers",
+    "builds",
+    "helps",
+    "makes",
+    "specializes",
+    "operates",
+    "creates",
+    "develops",
+    "delivers",
+    "powers",
+    "runs",
+    "opening",
+    "launched",
+    "founded",
+)
+_COMPANY_STOPWORDS = {
+    "We", "The", "Our", "This", "You", "It", "As", "At", "About", "Join",
+    "Are", "Here", "If", "When", "Why", "What", "Who", "Apply", "Position",
+    "Company", "Job", "Role", "Description", "Overview", "Summary",
+}
+_COMPANY_RE = re.compile(
+    r"^([A-Z][A-Za-z0-9.&'’]*(?:\s+[A-Z][A-Za-z0-9.&'’]*){0,4})\s+(?:"
+    + "|".join(_COMPANY_VERBS)
+    + r")\b"
+)
+
+
+def _company_from_description(text: str) -> str:
+    """Best-effort company name from the first 'X is/gets/...' sentence."""
+    for raw_line in text.split("\n")[:25]:
+        ln = raw_line.strip()
+        if not ln:
+            continue
+        ln = re.sub(r"^[#>\-*\s]+", "", ln)  # drop list/heading/emphasis markers
+        ln = ln.replace("**", "").replace("*", "")
+        ln = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", ln)  # link → text
+        m = _COMPANY_RE.match(ln)
+        if m and m.group(1).split()[0] not in _COMPANY_STOPWORDS:
+            return m.group(1).strip()
+    return ""
+
+
+def parse_indeed(body: str, meta: dict[str, str]) -> dict[str, str]:
+    row = {h: "" for h in HEADERS}
+
+    # Indeed frontmatter title is "<Title> - <Location>" (location may carry a ZIP).
+    title_field = meta.get("title", "").strip()
+    if " - " in title_field:
+        title, location = title_field.rsplit(" - ", 1)
+        row["Title"] = title.strip()
+        row["Location"] = location.strip()
+    else:
+        row["Title"] = title_field
+
+    row["Title_URL"] = meta.get("source", "")
+    row["Date"] = meta.get("created", "")
+
+    # Company: prefer the in-body Indeed company link, then the frontmatter
+    # description when it reads like a company name rather than a sentence.
+    co_link = re.search(
+        r"\[([^\]]+)\]\(https://www\.indeed\.com/cmp/[^)]+\)", body
+    )
+    if co_link:
+        row["Company"] = co_link.group(1).strip()
+        row["Company_URL"] = co_link.group(0)[co_link.group(0).find("(") + 1 : -1]
+    else:
+        desc = meta.get("description", "").strip()
+        if (
+            desc
+            and not desc.lower().startswith("apply for")
+            and len(desc) <= 60
+            and not desc.endswith(".")
+        ):
+            row["Company"] = desc
+
+    # Refine location with an explicit Remote/Hybrid/On-site marker if present.
+    workplace = re.search(r"^\s*(Remote|Hybrid|On-?site)\s*$", body, re.M | re.I)
+    if workplace:
+        marker = workplace.group(1)
+        if row["Location"] and marker.lower() not in row["Location"].lower():
+            row["Location"] = f"{row['Location']} ({marker})"
+        elif not row["Location"]:
+            row["Location"] = marker
+
+    # Salary: the "### Pay" bullet, falling back to a "$… an hour/a year" line.
+    pay = re.search(r"###\s*Pay\s*\n+\s*-\s*(.+?)(?:\n|$)", body)
+    if pay:
+        row["Salary"] = pay.group(1).strip()
+    else:
+        sal = re.search(
+            r"\$[\d,]+(?:\.\d+)?\s*-\s*\$?[\d,]+(?:\.\d+)?\s+(?:an hour|a year)",
+            body,
+        )
+        if sal:
+            row["Salary"] = sal.group(0).strip()
+
+    job_type = ""
+    jt = re.search(r"###\s*Job type\s*\n+\s*-\s*(.+?)(?:\n|$)", body)
+    if jt:
+        job_type = jt.group(1).strip()
+
+    job_m = re.search(
+        r"## Full job description\s*\n+(.*?)(?=\n## |\Z)",
+        body,
+        re.DOTALL,
+    )
+    if job_m:
+        row["About_the_job"] = job_m.group(1).strip()
+
+    # Last resort: pull the company from the opening line of the description.
+    if not row["Company"] and row["About_the_job"]:
+        row["Company"] = _company_from_description(row["About_the_job"])
+
+    is_intern = "intern" in row["Title"].lower() or "intern" in job_type.lower()
+    row["Is this an internship"] = "Yes" if is_intern else "No"
+    return row
+
+
 def parse_file(path: Path) -> dict[str, str]:
     raw = path.read_text(encoding="utf-8", errors="replace")
     meta, body = parse_frontmatter(raw)
     src = meta.get("source", "")
+    if "indeed.com" in src.lower() or "## Full job description" in body:
+        return parse_indeed(body, meta)
     if "linkedin.com" in src.lower() or "## About the job" in body:
         return parse_linkedin(body, meta)
     return parse_handshake(body, meta)

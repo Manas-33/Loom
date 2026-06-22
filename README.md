@@ -151,7 +151,7 @@ Once a PDF exists, two refinement actions are available per job (powered by the 
 
 ### Quick Add
 
-Paste raw text from a LinkedIn or Handshake job posting into the Quick Add panel. The dashboard parses it into structured fields (company, title, location, description, URL, etc.) and appends a new row to `jobs.xlsx` — no spreadsheet editing required.
+Paste raw text from a LinkedIn, Indeed, or Handshake job posting into the Quick Add panel. The dashboard parses it into structured fields (company, title, location, description, URL, etc.) and appends a new row to `jobs.xlsx` — no spreadsheet editing required.
 
 ### Diagnostics
 
