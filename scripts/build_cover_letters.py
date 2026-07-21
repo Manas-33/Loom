@@ -25,7 +25,7 @@ ADDRESS_LINE = "Los Angeles, United States"
 PHONE = "(213) 803-6398"
 EMAIL = "manasman@usc.edu"
 LINKEDIN = "linkedin.com/in/manasdalvi"
-WEBSITE = "manasdalvi.vercel.app"
+WEBSITE = "www.manasdalvi.dev"
 
 
 def _require_docx():
