@@ -186,10 +186,24 @@ def batch_prompt(profile: dict, batch: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
+# A ceiling right before or after the first number ("up to 2", "<= 2", "2 or less", "2 years max"): no minimum
+CEILING_BEFORE = re.compile(r"(?:up\s+to|at\s+most|no\s+more\s+than|(?:a\s+)?max(?:imum)?\.?(?:\s+of)?|under|"
+                            r"less\s+than|fewer\s+than|<=?|≤)\s*$", re.I)
+CEILING_AFTER = re.compile(r"\s*(?:years?|yrs?|months?|mos?)?\s*(?:or\s+(?:less|fewer|under|below)|max(?:imum)?\b|at\s+most\b)", re.I)
+MONTHS_AFTER = re.compile(r"\s*\+?\s*(?:(?:-|–|to)\s*\d+\s*)?(?:months?|mos?)\b", re.I)
+
+
 def min_years(years_required: str) -> int:
-    """The minimum years in the model's answer ("2+" → 2, "0-2" → 0, "" → 0)."""
-    m = re.search(r"\d+", years_required or "")
-    return int(m.group()) if m else 0
+    """The minimum years in the model's answer ("2+" → 2, "0-2" → 0, "up to 2" → 0, "18 months" → 1, "" → 0)."""
+    text = years_required or ""
+    m = re.search(r"\d+", text)
+    if not m:
+        return 0
+    before, after = text[:m.start()], text[m.end():]
+    if CEILING_BEFORE.search(before) or CEILING_AFTER.match(after):
+        return 0
+    n = int(m.group())
+    return n // 12 if MONTHS_AFTER.match(after) else n
 
 
 def decide(ans: dict, gpa: float | None, needs_sponsorship: bool = False) -> tuple[str, str, list[str]]:
