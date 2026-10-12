@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sweep"
+  short_description: "Check LinkedIn and Handshake for new early-career jobs"
+  default_prompt: "Use $sweep to run the LinkedIn and Handshake sweep."

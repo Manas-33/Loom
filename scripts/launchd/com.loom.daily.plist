@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Daily Loom run at 8:00. If the Mac is asleep at 8:00, launchd runs it once
+  when the Mac wakes. launchd starts loom-runner (scripts/launchd/loom_runner.c),
+  which runs scripts/daily_run.sh. loom-runner is the only program given Full
+  Disk Access, because background jobs can't read ~/Documents otherwise.
+  Install:   build loom-runner (see loom_runner.c), add it under System Settings >
+             Privacy & Security > Full Disk Access, then
+             cp scripts/launchd/com.loom.daily.plist ~/Library/LaunchAgents/
+             launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.loom.daily.plist
+  Run now:   launchctl kickstart gui/$(id -u)/com.loom.daily
+  Remove:    launchctl bootout gui/$(id -u)/com.loom.daily
+  Run logs are in data/logs/; this file's log only catches failures to start.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.loom.daily</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/dalvi/Library/Application Support/Loom/loom-runner</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>8</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/dalvi/Library/Logs/loom/launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/dalvi/Library/Logs/loom/launchd.log</string>
+</dict>
+</plist>
