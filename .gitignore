@@ -10,3 +10,21 @@ cv.md
 dashboard_statuses.json
 __pycache__
 .cursor
+.jobs.lock
+.jobs-*.xlsx
+AUTOMATION_PLAN.md
+/data
+profile.local.yaml
+.env
+DASHBOARD_REDESIGN.md
+
+# Frontend dependencies (production assets are checked in)
+/dashboard/frontend/node_modules/
+
+# Personal files, kept off the public repo
+/buckets/
+/Tiktok And Bytedance/
+simplify_import*.csv
+texput.log
+/From Tasks to Impact*
+.claude/launch.json
