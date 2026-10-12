@@ -4,6 +4,11 @@ A personal job-search workspace: discover opportunities, review your inbox, and 
 
 Company board checks and description reviews send promising roles to an inbox. Only jobs you **Keep** enter the application tracker. Pasted postings go straight to the tracker after you review them.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/inbox-dark.png">
+  <img alt="Loom's inbox: new-grad roles from the daily check, with their source, suggested resume, and why each one passed" src="docs/screenshots/inbox.png">
+</picture>
+
 ## Run locally
 
 ```bash
@@ -42,6 +47,24 @@ python scripts/phone.py off
 - **System**: view the last board check, description-review totals, inbox counts, live board counts, recorded Codex capacity, phone access, and local diagnostics. This page is view-only.
 
 The interface has light and dark appearances, bottom navigation on phones, and reduced-motion support. On a touch screen, swipe a card right to Keep or left to Reject; buttons remain available. Desktop inbox shortcuts: `j` / `k` select a card, `y` keeps it, `n` rejects it, and `/` focuses search.
+
+### Screenshots
+
+**Review**: a resume tailored for one job, with the changed lines highlighted, the checks it passed, and how much of the posting it now covers.
+
+![Review page: a tailored resume with two applied tweaks and a coverage score of 58% to 83%](docs/screenshots/review.png)
+
+**Forms**: an application filled in Chrome that still needs two answers, with a box for asking for changes.
+
+![Forms page: a filled application asking which two teams interest you and your start date](docs/screenshots/forms.png)
+
+**My jobs**: the tracker, with each job's resume, form status, and coverage.
+
+![My jobs: tracked roles with status, resume and form progress tags](docs/screenshots/jobs.png)
+
+**On a phone**: the inbox, and a filled form after a comment asked for a change.
+
+<img src="docs/screenshots/phone.png" width="560" alt="The inbox and a filled application on a phone">
 
 ## Frontend development
 
