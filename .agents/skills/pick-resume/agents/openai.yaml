@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pick Resume"
+  short_description: "Choose and tailor the right bucket resume"
+  default_prompt: "Use $pick-resume to choose the best resume for this job description."

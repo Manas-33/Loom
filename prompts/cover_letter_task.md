@@ -26,6 +26,22 @@ Your job is to write a tailored cover letter for each job listing in `/jobs/` us
 * **Conversational professionalism:** Write the way a smart engineer would speak to a senior developer: direct, plain-spoken, and free of corporate jargon.
 * **No em dashes:** Do not use em dashes in the generated text. If a clause needs to be separated, use standard commas, parentheses, or break it into two distinct sentences.
 
+## What the letter is FOR (fill gaps, don't restate the resume)
+
+The reader has the resume next to the letter. A letter that repeats resume bullets is wasted space. Use the letter for what the resume cannot carry:
+* The connecting narrative: why this domain, how the pieces of the background point at this role.
+* JD requirements the resume covers weakly: address them with transferable evidence and honest framing (never invented claims). If a keyword-coverage report exists for this job (from /pick-resume), its "missing" and "not claimable" lists are the letter's target list.
+* At most ONE metric may be repeated verbatim from the resume; every other fact should add context the resume lacks.
+
+## Company resonance
+
+When the job file's About/Company Intro states a mission, principles, or values, tie ONE concrete claim to it, in your own plain words — in ONE place only: paragraph 1 (as the specific company reference) or paragraph 3 (as the why-this-company), never both. Show the alignment through what you did, never by quoting their slogan or listing their values back at them ("I value innovation and collaboration" is banned-phrase territory).
+
+* Bad: "I share Whatnot's passion for community and moving fast."
+* Good: "Live commerce runs on the mechanics I shipped at Ombre: multi-host streaming and gifting that lifted premium signups 20%."
+
+The good version proves the alignment with a fact; the company's mission is visible only in the choice of which fact to tell. If nothing in the About text genuinely connects to real evidence, SKIP resonance entirely rather than forcing it — a letter with no culture paragraph beats one with a hollow one.
+
 ## Paragraph Structure
 **Paragraph 1: Opening (3–4 sentences)**
 * State the role and company directly.
